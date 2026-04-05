@@ -468,7 +468,7 @@ a:hover {
     font-size: 1.2rem;
     font-style: italic;
     margin-top: 40px;
-    color: var(--primary-color);
+    color: var(--secondary-color);
     font-weight: 600;
 }
 
@@ -509,7 +509,7 @@ a:hover {
 }
 
 .program-card:hover {
-    border-color: var(--primary-color);
+    border-color: var(--secondary-color);
     box-shadow: var(--shadow);
     transform: translateY(-10px);
 }
@@ -526,7 +526,7 @@ a:hover {
 
 .program-accent {
     font-size: 0.95rem;
-    color: var(--primary-color);
+    color: var(--secondary-color);
     font-weight: 600;
     font-style: italic;
     margin-bottom: 15px;
@@ -598,7 +598,7 @@ a:hover {
 
 .step-accent {
     font-size: 0.95rem;
-    color: var(--primary-color);
+    color: var(--secondary-color);
     font-weight: 600;
     font-style: italic;
     margin-bottom: 15px;
@@ -726,7 +726,7 @@ a:hover {
     padding: 30px;
     border-radius: 12px;
     box-shadow: var(--shadow-light);
-    border-left: 4px solid var(--primary-color);
+    border-left: 4px solid var(--secondary-color);
     transition: var(--transition);
 }
 
@@ -745,7 +745,7 @@ a:hover {
 
 .testimonial-spanish {
     font-size: 0.95rem;
-    color: var(--primary-color);
+    color: var(--secondary-color);
     font-style: italic;
     font-weight: 600;
     margin-bottom: 20px !important;
@@ -785,8 +785,9 @@ a:hover {
 .culture-card {
     text-align: center;
     padding: 40px 20px;
-    background: linear-gradient(135deg, rgba(246, 149, 33, 0.05), rgba(30, 98, 148, 0.05));
+    background: linear-gradient(135deg, rgba(30, 98, 148, 0.08), rgba(246, 149, 33, 0.05));
     border-radius: 12px;
+    border: 2px solid rgba(30, 98, 148, 0.1);
     transition: var(--transition);
 }
 
