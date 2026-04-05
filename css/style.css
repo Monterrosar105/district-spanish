@@ -140,7 +140,7 @@ a:hover {
 }
 
 .btn-whatsapp {
-    background-color: #25D366;
+    background-color: #29a71a;
     color: white;
     display: inline-flex;
     align-items: center;
@@ -148,9 +148,15 @@ a:hover {
 }
 
 .btn-whatsapp:hover {
-    background-color: #20ba5a;
+    background-color: #1f7f14;
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
+    box-shadow: 0 8px 20px rgba(41, 167, 26, 0.3);
+}
+
+.whatsapp-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
 }
 
 .btn-large {
@@ -1170,30 +1176,36 @@ a:hover {
     right: 30px;
     width: 60px;
     height: 60px;
-    background-color: #25D366;
+    background-color: #29a71a;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2rem;
     z-index: 99;
-    box-shadow: 0 10px 30px rgba(37, 211, 102, 0.4);
+    box-shadow: 0 10px 30px rgba(41, 167, 26, 0.4);
     transition: var(--transition);
     animation: pulse 2s infinite;
 }
 
 .whatsapp-button:hover {
-    background-color: #20ba5a;
+    background-color: #1f7f14;
     transform: scale(1.1);
-    box-shadow: 0 15px 40px rgba(37, 211, 102, 0.5);
+    box-shadow: 0 15px 40px rgba(41, 167, 26, 0.5);
+}
+
+.whatsapp-button-img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
 }
 
 @keyframes pulse {
     0%, 100% {
-        box-shadow: 0 10px 30px rgba(37, 211, 102, 0.4);
+        box-shadow: 0 10px 30px rgba(41, 167, 26, 0.4);
     }
     50% {
-        box-shadow: 0 10px 40px rgba(37, 211, 102, 0.6);
+        box-shadow: 0 10px 40px rgba(41, 167, 26, 0.6);
     }
 }
 
