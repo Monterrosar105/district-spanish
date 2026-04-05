@@ -1,0 +1,62 @@
+# District Spanish - Git Ignore File
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+*.min.js
+*.min.css
+
+# OS files
+.DS_Store
+Thumbs.db
+.env
+.env.local
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.sass-cache/
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.project
+.classpath
+.c9/
+*.jsproj
+*.sln
+*.sw?
+
+# Compiled files
+*.js.map
+*.css.map
+
+# Testing
+coverage/
+.nyc_output/
+
+# Optional npm cache directory
+.npm
+
+# Backups
+*.bak
+*.orig
+backup/
+
+# Production builds (if any)
+public/
+out/
