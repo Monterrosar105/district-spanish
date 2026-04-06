@@ -120,6 +120,14 @@ if (heroOpenFormModal) {
   });
 }
 
+// Open form modal from program modal "Book FREE Level Assessment" buttons
+document.querySelectorAll('.open-form-modal-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    closeProgramModals();
+    openModal();
+  });
+});
+
 // Close modal
 function closeModal() {
   formModal.classList.remove('active');
@@ -441,6 +449,57 @@ document.querySelectorAll('a[href^="http"], a[href^="https"], a[href^="mailto"],
 window.printPage = function() {
     window.print();
 };
+
+// ============================================
+// PROGRAM MODALS
+// ============================================
+
+const programModalIds = ['privateModal', 'groupModal', 'couplesModal', 'tutoringModal'];
+
+function closeProgramModals() {
+  programModalIds.forEach(id => {
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.remove('active');
+  });
+  document.body.style.overflow = 'auto';
+}
+
+// Open modal triggered by data-modal attribute
+document.querySelectorAll('[data-modal]').forEach(trigger => {
+  trigger.addEventListener('click', () => {
+    const modalId = trigger.getAttribute('data-modal');
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  });
+});
+
+// Close program modals via their close buttons and overlays
+[
+  ['closePrivateModal',   'privateModalOverlay'],
+  ['closeGroupModal',     'groupModalOverlay'],
+  ['closeCouplesModal',   'couplesModalOverlay'],
+  ['closeTutoringModal',  'tutoringModalOverlay'],
+].forEach(([btnId, overlayId]) => {
+  const btn = document.getElementById(btnId);
+  const overlay = document.getElementById(overlayId);
+  if (btn) btn.addEventListener('click', closeProgramModals);
+  if (overlay) overlay.addEventListener('click', closeProgramModals);
+});
+
+// Close program modals with Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeProgramModals();
+});
+
+// Close program modals when clicking a "Get Started" link inside them
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.program-modal-cta')) {
+    closeProgramModals();
+  }
+});
 
 // ============================================
 // READY STATE
