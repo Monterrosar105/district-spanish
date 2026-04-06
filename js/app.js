@@ -456,9 +456,6 @@ function closeProgramModals() {
   document.body.style.overflow = 'auto';
 }
 
-// Make closeProgramModals available globally for inline onclick handlers
-window.closeProgramModals = closeProgramModals;
-
 // Open modal triggered by data-modal attribute
 document.querySelectorAll('[data-modal]').forEach(trigger => {
   trigger.addEventListener('click', () => {
@@ -487,6 +484,13 @@ document.querySelectorAll('[data-modal]').forEach(trigger => {
 // Close program modals with Escape key
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeProgramModals();
+});
+
+// Close program modals when clicking a "Get Started" link inside them
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.program-modal-cta')) {
+    closeProgramModals();
+  }
 });
 
 // ============================================
