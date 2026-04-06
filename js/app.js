@@ -443,6 +443,53 @@ window.printPage = function() {
 };
 
 // ============================================
+// PROGRAM MODALS
+// ============================================
+
+const programModalIds = ['privateModal', 'groupModal', 'couplesModal', 'tutoringModal'];
+
+function closeProgramModals() {
+  programModalIds.forEach(id => {
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.remove('active');
+  });
+  document.body.style.overflow = 'auto';
+}
+
+// Make closeProgramModals available globally for inline onclick handlers
+window.closeProgramModals = closeProgramModals;
+
+// Open modal triggered by data-modal attribute
+document.querySelectorAll('[data-modal]').forEach(trigger => {
+  trigger.addEventListener('click', () => {
+    const modalId = trigger.getAttribute('data-modal');
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  });
+});
+
+// Close program modals via their close buttons and overlays
+[
+  ['closePrivateModal',   'privateModalOverlay'],
+  ['closeGroupModal',     'groupModalOverlay'],
+  ['closeCouplesModal',   'couplesModalOverlay'],
+  ['closeTutoringModal',  'tutoringModalOverlay'],
+].forEach(([btnId, overlayId]) => {
+  const btn = document.getElementById(btnId);
+  const overlay = document.getElementById(overlayId);
+  if (btn) btn.addEventListener('click', closeProgramModals);
+  if (overlay) overlay.addEventListener('click', closeProgramModals);
+});
+
+// Close program modals with Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeProgramModals();
+});
+
+// ============================================
 // READY STATE
 // ============================================
 

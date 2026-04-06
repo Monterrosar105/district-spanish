@@ -94,8 +94,8 @@
                         <img src="images/programs/private.png" alt="Online Private Classes">
                     </div>
                     <h3>Online Private Classes</h3>
-                    <p class="program-description">One of the main benefits of taking one-on-one classes is that each lesson is 100% adapted to your needs and goals, and the classes are conducted at your own pace. You're welcome to choose the day and time for the classes, the frequency of your lessons and even their length.</p>
-                    <a href="#" class="btn btn-outline">Learn More</a>
+                    <p class="program-description">100% tailored to you. Learn at your own pace, on your schedule, with a personalized lesson plan built around your goals.</p>
+                    <button class="btn btn-outline" data-modal="privateModal">Learn More</button>
                 </div>
                 
                 <!-- Program 2 -->
@@ -104,8 +104,8 @@
                         <img src="images/programs/group.png" alt="Online Group Classes">
                     </div>
                     <h3>Online Group Classes</h3>
-                    <p class="program-description">Our small groups start with a minimum of 2 students and have a maximum of 4 students. The advantages of taking classes in a small group is that you get to interact and practice Spanish with other people and you get to learn from one another. The length of the class is 1.5 hours once a week. Our Groups are internally made.</p>
-                    <a href="#" class="btn btn-outline">Learn More</a>
+                    <p class="program-description">Learn alongside others with similar goals. Small groups of 2–4 students, 1.5 hours per week. Budget-friendly and community-driven.</p>
+                    <button class="btn btn-outline" data-modal="groupModal">Learn More</button>
                 </div>
                 
                 <!-- Program 3 -->
@@ -114,8 +114,8 @@
                         <img src="images/programs/couples.png" alt="Online Couples Classes">
                     </div>
                     <h3>Online Couples Classes</h3>
-                    <p class="program-description">Our semi-private group is a great opportunity for you and a partner, friend, co-worker or spouse to learn Spanish together. The group is formed only by 2 people and we give you the same benefits as a private student.</p>
-                    <a href="#" class="btn btn-outline">Learn More</a>
+                    <p class="program-description">Learn Spanish with someone you know. A semi-private class for two — flexible schedule, shared goals, and twice the motivation.</p>
+                    <button class="btn btn-outline" data-modal="couplesModal">Learn More</button>
                 </div>
                 
                 <!-- Program 4 -->
@@ -124,8 +124,8 @@
                         <img src="images/programs/tutoring.png" alt="Online Tutoring">
                     </div>
                     <h3>Online Tutoring</h3>
-                    <p class="program-description">Having trouble at School or College? District Spanish has excellent instructors that can guide you or your child to succeed in their Spanish homework, assignments and testing. For Middle School, High School and College students.</p>
-                    <a href="#" class="btn btn-outline">Learn More</a>
+                    <p class="program-description">Need help with Spanish homework, assignments, or tests? Our expert tutors work one-on-one with students at any level.</p>
+                    <button class="btn btn-outline" data-modal="tutoringModal">Learn More</button>
                 </div>
             </div>
         </div>
@@ -448,6 +448,237 @@
             </div>
         </div>
     </section>
+
+    <!-- Private Classes Modal -->
+    <div id="privateModal" class="modal">
+        <div class="modal-overlay" id="privateModalOverlay"></div>
+        <div class="modal-content modal-content-wide">
+            <button class="modal-close" id="closePrivateModal">×</button>
+
+            <div class="modal-header">
+                <h2>Online Private Classes</h2>
+                <p>One-on-one learning tailored entirely to you</p>
+            </div>
+
+            <div class="program-modal-body">
+                <div class="program-modal-section">
+                    <h4>Benefits</h4>
+                    <ul class="program-modal-list">
+                        <li><strong>Flexibility</strong> — You decide the length, schedule, and frequency of your classes.</li>
+                        <li><strong>Customized</strong> — Tell us your goals and we'll build a personalized lesson plan together.</li>
+                        <li><strong>Learn Online</strong> — All you need is a reliable internet connection. Connect from home or the office.</li>
+                    </ul>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>How to Join</h4>
+                    <ol class="program-modal-steps">
+                        <li>Sign up for our <strong>FREE Level Assessment</strong> — we'll get to know you, assess your Spanish, and discuss your goals.</li>
+                        <li>Choose the package that fits your needs and commitment level.</li>
+                        <li>Get matched with the right instructor and schedule your first class.</li>
+                    </ol>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>Pricing</h4>
+                    <p class="program-modal-note">Price is per hour and commitment-based — the more hours you invest, the better the rate.</p>
+                    <div class="program-modal-pricing-grid">
+                        <div class="pricing-card">
+                            <h3>Trial</h3>
+                            <p class="pricing-accent">1 to 4 Hours</p>
+                            <div class="pricing-price">$60<span>/hr</span></div>
+                            <ul class="pricing-features">
+                                <li>✓ Up to 1 month to schedule</li>
+                                <li>✓ Cancel/reschedule within 24 hrs</li>
+                            </ul>
+                            <a href="#contact" class="btn btn-pricing program-modal-cta" onclick="closeProgramModals()">Get Started</a>
+                        </div>
+                        <div class="pricing-card pricing-featured">
+                            <div class="pricing-badge">Best Value</div>
+                            <h3>Basic</h3>
+                            <p class="pricing-accent">5 to 7 Hours</p>
+                            <div class="pricing-price">$50<span>/hr</span></div>
+                            <ul class="pricing-features">
+                                <li>✓ Up to 3 months to schedule</li>
+                                <li>✓ Cancel/reschedule within 24 hrs</li>
+                            </ul>
+                            <a href="#contact" class="btn btn-primary program-modal-cta" onclick="closeProgramModals()">Get Started</a>
+                        </div>
+                        <div class="pricing-card">
+                            <h3>Value</h3>
+                            <p class="pricing-accent">8+ Hours</p>
+                            <div class="pricing-price">$45<span>/hr</span></div>
+                            <ul class="pricing-features">
+                                <li>✓ Up to 6 months to schedule</li>
+                                <li>✓ Cancel/reschedule within 24 hrs</li>
+                            </ul>
+                            <a href="#contact" class="btn btn-pricing program-modal-cta" onclick="closeProgramModals()">Get Started</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Classes Modal -->
+    <div id="groupModal" class="modal">
+        <div class="modal-overlay" id="groupModalOverlay"></div>
+        <div class="modal-content modal-content-wide">
+            <button class="modal-close" id="closeGroupModal">×</button>
+
+            <div class="modal-header">
+                <h2>Online Group Classes</h2>
+                <p>Practice, connect, and grow with others who share your goals</p>
+            </div>
+
+            <div class="program-modal-body">
+                <div class="program-modal-section">
+                    <h4>Benefits</h4>
+                    <ul class="program-modal-list">
+                        <li><strong>Learn from Each Other</strong> — Knowledge is shared. Corrections and accomplishments benefit the whole group.</li>
+                        <li><strong>Plan in Advance</strong> — On the first class, the group decides the full schedule together so you can plan ahead.</li>
+                        <li><strong>Learn Online</strong> — All you need is a reliable internet connection. Connect from anywhere.</li>
+                    </ul>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>Group Size</h4>
+                    <p>Groups range from <strong>2 to 4 students</strong> — small enough to maximize your speaking time. You're matched by Spanish level, availability, and interests.</p>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>How to Join</h4>
+                    <ol class="program-modal-steps">
+                        <li>Sign up for our <strong>FREE Level Assessment</strong> — we'll assess your Spanish and learn about your goals.</li>
+                        <li>We'll match you with a compatible group based on your level, availability, and interests.</li>
+                        <li>Meet your classmates and tutor. If it's the right fit, you're in!</li>
+                    </ol>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>Pricing</h4>
+                    <div class="program-modal-pricing-grid program-modal-pricing-single">
+                        <div class="pricing-card pricing-featured">
+                            <div class="pricing-badge">Group Package</div>
+                            <h3>Group Classes</h3>
+                            <p class="pricing-accent">6 weeks · 9 hours total</p>
+                            <div class="pricing-price">$30<span>/hr</span></div>
+                            <ul class="pricing-features">
+                                <li>✓ 1.5 hours · once a week</li>
+                                <li>✓ 9 hours per package</li>
+                                <li>✓ 6-week duration</li>
+                                <li>✓ $270 total per package</li>
+                            </ul>
+                            <a href="#contact" class="btn btn-primary program-modal-cta" onclick="closeProgramModals()">Get Started</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Couples Classes Modal -->
+    <div id="couplesModal" class="modal">
+        <div class="modal-overlay" id="couplesModalOverlay"></div>
+        <div class="modal-content modal-content-wide">
+            <button class="modal-close" id="closeCouplesModal">×</button>
+
+            <div class="modal-header">
+                <h2>Online Couples Classes</h2>
+                <p>Learn Spanish together — with someone you know</p>
+            </div>
+
+            <div class="program-modal-body">
+                <div class="program-modal-section">
+                    <h4>Benefits</h4>
+                    <ul class="program-modal-list">
+                        <li><strong>Semi-Private</strong> — All the benefits of a private class, but for two. No extra students added.</li>
+                        <li><strong>Build Your Own Program</strong> — Flexible scheduling, custom hours, and a personalized lesson plan for both of you.</li>
+                        <li><strong>Learn Online</strong> — Connect together or separately from anywhere. No commute required.</li>
+                    </ul>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>How to Join</h4>
+                    <ol class="program-modal-steps">
+                        <li>Sign up for our <strong>FREE Level Assessment</strong> — both partners can take it together or separately.</li>
+                        <li>We'll assess your levels, discuss goals, and determine your pace and schedule.</li>
+                        <li>Get matched with an instructor and start learning Spanish together.</li>
+                    </ol>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>Pricing</h4>
+                    <div class="program-modal-pricing-grid program-modal-pricing-single">
+                        <div class="pricing-card pricing-featured">
+                            <div class="pricing-badge">Couples Package</div>
+                            <h3>Couples Classes</h3>
+                            <p class="pricing-accent">$35 per person / hour</p>
+                            <div class="pricing-price">$70<span>/hr</span></div>
+                            <ul class="pricing-features">
+                                <li>✓ Flexible pace &amp; schedule</li>
+                                <li>✓ Flexible number of hours</li>
+                                <li>✓ Personalized lesson plan for two</li>
+                                <li>✓ $35 per person / hour</li>
+                            </ul>
+                            <a href="#contact" class="btn btn-primary program-modal-cta" onclick="closeProgramModals()">Get Started</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutoring Modal -->
+    <div id="tutoringModal" class="modal">
+        <div class="modal-overlay" id="tutoringModalOverlay"></div>
+        <div class="modal-content modal-content-wide">
+            <button class="modal-close" id="closeTutoringModal">×</button>
+
+            <div class="modal-header">
+                <h2>Online Tutoring</h2>
+                <p>Personalized Spanish support for students at any level</p>
+            </div>
+
+            <div class="program-modal-body">
+                <div class="program-modal-section">
+                    <h4>Benefits</h4>
+                    <ul class="program-modal-list">
+                        <li><strong>Flexibility</strong> — You decide the length, schedule, and frequency of sessions.</li>
+                        <li><strong>Customized</strong> — We build a personalized plan around the student's specific needs and level.</li>
+                        <li><strong>Learn Online</strong> — Connect from home or anywhere with a reliable internet connection.</li>
+                    </ul>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>How to Join</h4>
+                    <ol class="program-modal-steps">
+                        <li>Sign up for our <strong>FREE Level Assessment</strong> — we'll evaluate the student's Spanish level and learning needs.</li>
+                        <li>We'll draft a plan tailored to the student's academic goals and requirements.</li>
+                        <li>Get matched with the right instructor and schedule your first session.</li>
+                    </ol>
+                </div>
+
+                <div class="program-modal-section">
+                    <h4>Pricing</h4>
+                    <div class="program-modal-pricing-grid program-modal-pricing-single">
+                        <div class="pricing-card pricing-featured">
+                            <div class="pricing-badge">Tutoring Package</div>
+                            <h3>Online Tutoring</h3>
+                            <p class="pricing-accent">4 Hours or More</p>
+                            <div class="pricing-price">$50<span>/hr</span></div>
+                            <ul class="pricing-features">
+                                <li>✓ Up to 6 months to schedule</li>
+                                <li>✓ Cancel/reschedule within 24 hrs</li>
+                                <li>✓ Personalized lesson plan</li>
+                            </ul>
+                            <a href="#contact" class="btn btn-primary program-modal-cta" onclick="closeProgramModals()">Get Started</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Form Modal -->
     <div id="formModal" class="modal">
