@@ -2,13 +2,28 @@
 // Cloudflare Worker - Form Submission Handler
 // ============================================
 
+const CORS_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+};
+
 export default {
   async fetch(request, env, ctx) {
+    // Handle preflight requests
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: CORS_HEADERS
+      });
+    }
+
     // Only allow POST requests
     if (request.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { 'Content-Type': 'application/json' }
+        headers: CORS_HEADERS
       });
     }
 
@@ -23,7 +38,7 @@ export default {
       if (missingFields.length > 0) {
         return new Response(
           JSON.stringify({ error: `Missing required fields: ${missingFields.join(', ')}` }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+          { status: 400, headers: CORS_HEADERS }
         );
       }
 
@@ -32,7 +47,7 @@ export default {
       if (!emailRegex.test(formData.email)) {
         return new Response(
           JSON.stringify({ error: 'Invalid email format' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+          { status: 400, headers: CORS_HEADERS }
         );
       }
 
@@ -46,21 +61,21 @@ export default {
         console.error('Resend API error:', emailResponse.error);
         return new Response(
           JSON.stringify({ error: 'Failed to send email' }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
+          { status: 500, headers: CORS_HEADERS }
         );
       }
 
       // Success response
       return new Response(
         JSON.stringify({ success: true, message: 'Form submitted successfully' }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
+        { status: 200, headers: CORS_HEADERS }
       );
 
     } catch (error) {
       console.error('Worker error:', error);
       return new Response(
         JSON.stringify({ error: 'Internal server error' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: CORS_HEADERS }
       );
     }
   }
@@ -178,11 +193,8 @@ async function sendEmailWithResend(apiKey, htmlContent, senderEmail) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        /**from: 'noreply@districtspanish.com',
-        to: 'team@districtspanish.com',*/
-
-        from: 'robmonterrosa105@gmail.com',
-        to: 'robmonterrosa105@gmail.com',
+        from: 'noreply@districtspanish.com',
+        to: 'gerardo@districtspanish.com',
         subject: `New Contact Form Submission from ${senderEmail}`,
         html: htmlContent,
         reply_to: senderEmail

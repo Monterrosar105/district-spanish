@@ -228,7 +228,7 @@ if (contactForm) {
     submitButton.textContent = 'Sending...';
 
     try {
-      // Send POST request to Cloudflare Worker
+      // Send POST request to Cloudflare Workers
       const response = await fetch('https://district-spanish-form.robmonterrosa105.workers.dev/', {
         method: 'POST',
         headers: {
