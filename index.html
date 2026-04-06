@@ -31,7 +31,7 @@
                 <li><a href="#teachers" class="nav-link">Teachers</a></li>
                 <li><a href="#pricing" class="nav-link">Pricing</a></li>
                 <li><a href="#contact" class="nav-link">Contact</a></li>
-                <li><a href="#contact" class="btn btn-primary nav-cta">Book Free Class</a></li>
+                <li><button class="btn btn-primary nav-cta" id="navOpenFormModal">Book Free Class</button></li>
             </ul>
         </div>
     </nav>
@@ -44,7 +44,7 @@
             <p class="hero-subtitle">Live classes with native teachers. Real conversations from day one.</p>
             <p class="hero-accent">Tu nueva vida empieza en español.</p>
             <div class="hero-buttons">
-                <a href="#contact" class="btn btn-primary">Book Free Class</a>
+                <button class="btn btn-primary" id="heroOpenFormModal">Book Free Class</button>
                 <a href="#how-it-works" class="btn btn-secondary">Ver Cómo Funciona</a>
             </div>
         </div>
@@ -420,54 +420,156 @@
     <section id="contact" class="contact">
         <div class="container">
             <h2 class="section-title">Ready to Start?</h2>
-            <p class="section-subtitle">Join thousands of students speaking Spanish with confidence</p>
+            <p class="section-subtitle">Book your free trial class today</p>
             
             <div class="contact-grid">
-                <!-- Contact Form -->
-                <div class="contact-form-wrapper">
-                    <form class="contact-form" id="contactForm">
-                        <div class="form-group">
-                            <input type="text" id="name" name="name" placeholder="Your Name" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" id="email" name="email" placeholder="Your Email" required>
-                        </div>
-                        <div class="form-group">
-                            <textarea id="message" name="message" placeholder="Tell us about your Spanish goals..." rows="5" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-large">Book Free Class</button>
-                    </form>
-                </div>
-                
                 <!-- Contact Info -->
                 <div class="contact-info">
-                    <h3>Get in Touch</h3>
-                    
                     <div class="contact-item">
-                        <h4>Email</h4>
-                        <p><a href="mailto:team@districtspanish.com">team@districtspanish.com</a></p>
-                    </div>
-                    
-                    <div class="contact-item">
-                        <h4>Connect with Us</h4>
                         <div class="contact-buttons">
-                            <a href="#" class="btn btn-secondary">Book Free Class</a>
-                            <a href="https://wa.me/14155552671?text=Hi%20District%20Spanish!%20I%20want%20to%20learn%20Spanish" class="btn btn-whatsapp" target="_blank">
+                            <button class="btn btn-cta-primary" id="openFormModal">Book Free Class</button>
+                            <a href="https://wa.me/14155552671?text=Hi%20District%20Spanish!%20I%20want%20to%20learn%20Spanish" class="btn btn-whatsapp-large" target="_blank">
                                 <img src="./images/whatsapp.png" alt="WhatsApp" class="whatsapp-icon"> WhatsApp
                             </a>
                         </div>
                     </div>
                     
                     <p class="contact-note">We respond within 24 hours. ¡Esperamos hablar pronto!</p>
+                    
+                    <div class="contact-item">
+                        <h4>Email</h4>
+                        <p><a href="mailto:team@districtspanish.com">team@districtspanish.com</a></p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Form Modal -->
+    <div id="formModal" class="modal">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="closeFormModal">×</button>
+            
+            <div class="modal-header">
+                <h2>Book Your Free Trial Class</h2>
+                <p>Tell us about yourself and your Spanish learning goals</p>
+            </div>
+
+            <form class="contact-form" id="contact-form">
+                <!-- Basic Info -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First Name *</label>
+                        <input type="text" id="firstName" name="firstName" placeholder="John" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name *</label>
+                        <input type="text" id="lastName" name="lastName" placeholder="Smith" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" placeholder="john@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" placeholder="(555) 123-4567" required>
+                    </div>
+                </div>
+
+                <!-- Spanish Level -->
+                <div class="form-group">
+                    <label for="level">Spanish Level *</label>
+                    <select id="level" name="level" required>
+                        <option value="">-- Select your level --</option>
+                        <option value="Complete Beginner">Complete Beginner</option>
+                        <option value="Beginner (Know some basic expressions, but that's all)">Beginner (Know some basic expressions, but that's all)</option>
+                        <option value="Beginner Intermediate (You already know the basics and the present tense conjugations)">Beginner Intermediate (You already know the basics and the present tense conjugations)</option>
+                        <option value="Beginner Advanced (You struggle with irregular verbs in the present)">Beginner Advanced (You struggle with irregular verbs in the present)</option>
+                        <option value="Intermediate (Dominate the present but struggle with past tenses)">Intermediate (Dominate the present but struggle with past tenses)</option>
+                        <option value="Intermediate Advanced (You dominate the past but need help with complex Spanish structures)">Intermediate Advanced (You dominate the past but need help with complex Spanish structures)</option>
+                        <option value="Advanced (You are ready for conversation and idiomatic expressions)">Advanced (You are ready for conversation and idiomatic expressions)</option>
+                        <option value="Conversational (You want to practice and become native-like)">Conversational (You want to practice and become native-like)</option>
+                    </select>
+                </div>
+
+                <!-- Experience -->
+                <div class="form-group">
+                    <label for="experience">Tell us about your Spanish experience</label>
+                    <textarea id="experience" name="experience" placeholder="Would you like to tell us more about your experience with Spanish?" rows="3"></textarea>
+                </div>
+
+                <!-- Schedule Availability -->
+                <div class="form-group">
+                    <label>When can you take classes? (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="schedule" value="Weekdays (Monday to Friday Mornings)">
+                            Weekdays (Monday to Friday Mornings)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="schedule" value="Mornings (8:00 AM to 12:00 PM)">
+                            Mornings (8:00 AM to 12:00 PM)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="schedule" value="Afternoons (1:00 PM to 5:00 PM)">
+                            Afternoons (1:00 PM to 5:00 PM)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="schedule" value="Evenings (6:00 PM to 9:00 PM)">
+                            Evenings (6:00 PM to 9:00 PM)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="schedule" value="Weekends (Friday Afternoons & Saturdays)">
+                            Weekends (Friday Afternoons & Saturdays)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="schedule" value="Other" id="scheduleOtherCheck">
+                            Other
+                        </label>
+                    </div>
+                    <input type="text" id="scheduleOther" name="scheduleOther" placeholder="Please specify..." class="schedule-other-input" style="display: none; margin-top: 10px;">
+                </div>
+
+                <!-- Referral Source -->
+                <div class="form-group">
+                    <label for="referralSource">How did you hear about us? *</label>
+                    <select id="referralSource" name="referralSource" required>
+                        <option value="">-- Select an option --</option>
+                        <option value="Yelp">Yelp</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Neighborhood Listserv">Neighborhood Listserv</option>
+                        <option value="Conversational DC">Conversational DC</option>
+                        <option value="Google Search/website">Google Search/website</option>
+                        <option value="Referral">Referral</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" id="referralOther" name="referralOther" placeholder="Please specify..." class="referral-other-input" style="display: none; margin-top: 10px;">
+                </div>
+
+                <!-- Comments -->
+                <div class="form-group">
+                    <label for="comments">Any other comments or questions?</label>
+                    <textarea id="comments" name="comments" placeholder="Tell us anything else we should know..." rows="3"></textarea>
+                </div>
+
+                <!-- Status Message -->
+                <div id="form-status" class="form-status"></div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary btn-large">Book Free Class</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 District Spanish. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            <p>&copy; 2026 District Spanish. All rights reserved. </p>  <!--| <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a> -->
             <p>Learn Spanish. Speak with confidence. 🌍</p>
         </div>
     </footer>

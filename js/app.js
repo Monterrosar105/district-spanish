@@ -83,50 +83,203 @@ faqButtons.forEach((button, index) => {
 });
 
 // ============================================
+// MODAL HANDLING
+// ============================================
+
+const formModal = document.getElementById('formModal');
+const openFormModal = document.getElementById('openFormModal');
+const navOpenFormModal = document.getElementById('navOpenFormModal');
+const heroOpenFormModal = document.getElementById('heroOpenFormModal');
+const closeFormModal = document.getElementById('closeFormModal');
+const modalOverlay = document.getElementById('modalOverlay');
+
+// Open modal function
+function openModal() {
+  formModal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+// Open modal from Contact Info button
+if (openFormModal) {
+  openFormModal.addEventListener('click', openModal);
+}
+
+// Open modal from Navbar button
+if (navOpenFormModal) {
+  navOpenFormModal.addEventListener('click', (e) => {
+    e.preventDefault();
+    openModal();
+  });
+}
+
+// Open modal from Hero button
+if (heroOpenFormModal) {
+  heroOpenFormModal.addEventListener('click', (e) => {
+    e.preventDefault();
+    openModal();
+  });
+}
+
+// Close modal
+function closeModal() {
+  formModal.classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+if (closeFormModal) {
+  closeFormModal.addEventListener('click', closeModal);
+}
+
+// Close modal when clicking overlay
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', closeModal);
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && formModal.classList.contains('active')) {
+    closeModal();
+  }
+});
+
+// ============================================
 // CONTACT FORM HANDLING
 // ============================================
 
-const contactForm = document.getElementById('contactForm');
+const contactForm = document.getElementById('contact-form');
+const formStatus = document.getElementById('form-status');
+
+// Show/hide "Other" field for schedule
+const scheduleOtherCheck = document.getElementById('scheduleOtherCheck');
+const scheduleOtherInput = document.querySelector('.schedule-other-input');
+
+if (scheduleOtherCheck) {
+  scheduleOtherCheck.addEventListener('change', (e) => {
+    scheduleOtherInput.style.display = e.target.checked ? 'block' : 'none';
+  });
+}
+
+// Show/hide "Other" field for referral source
+const referralSourceSelect = document.getElementById('referralSource');
+const referralOtherInput = document.querySelector('.referral-other-input');
+
+if (referralSourceSelect) {
+  referralSourceSelect.addEventListener('change', (e) => {
+    referralOtherInput.style.display = e.target.value === 'Other' ? 'block' : 'none';
+  });
+}
 
 if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
-        e.preventDefault();
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Clear previous status messages
+    formStatus.textContent = '';
+    formStatus.className = 'form-status';
+
+    // Get form values
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const level = document.getElementById('level').value;
+    const experience = document.getElementById('experience').value.trim();
+    const comments = document.getElementById('comments').value.trim();
+    const referralSource = document.getElementById('referralSource').value;
+    const referralOther = document.getElementById('referralOther').value.trim();
+
+    // Get schedule checkboxes
+    const scheduleCheckboxes = document.querySelectorAll('input[name="schedule"]:checked');
+    const schedule = Array.from(scheduleCheckboxes).map(cb => cb.value);
+    const scheduleOther = document.getElementById('scheduleOther').value.trim();
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !phone || !level || !referralSource) {
+      showFormStatus('Please fill in all required fields (*)', 'error');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showFormStatus('Please enter a valid email address', 'error');
+      return;
+    }
+
+    // Build form data object
+    const formData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      level,
+      experience,
+      schedule,
+      scheduleOther,
+      comments,
+      referralSource,
+      referralOther
+    };
+
+    // Show loading state
+    const submitButton = contactForm.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Sending...';
+
+    try {
+      // Send POST request to Cloudflare Worker
+      const response = await fetch('https://district-spanish-form.robmonterrosa105.workers.dev/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Success
+        showFormStatus('✓ Thank you! We received your message and will contact you soon.', 'success');
+        contactForm.reset();
+        scheduleOtherInput.style.display = 'none';
+        referralOtherInput.style.display = 'none';
         
-        // Get form values
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
-        const message = document.getElementById('message').value;
-        
-        // Validate form
-        if (!name || !email || !message) {
-            alert('Please fill in all fields');
-            return;
-        }
-        
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            alert('Please enter a valid email address');
-            return;
-        }
-        
-        // Show success message (in a real application, this would send to a server)
-        const submitButton = contactForm.querySelector('button[type="submit"]');
-        const originalText = submitButton.textContent;
-        
-        submitButton.textContent = '✓ Message Sent!';
-        submitButton.style.backgroundColor = '#25D366';
-        
-        // Generate mailto link with form data
-        const mailtoLink = `mailto:team@districtspanish.com?subject=New Contact: ${encodeURIComponent(name)}&body=${encodeURIComponent(message)}%0A%0AFrom: ${encodeURIComponent(name)} (${encodeURIComponent(email)})`;
-        
-        // Reset form
+        // Reset button
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+
+        // Clear success message and close modal after 3 seconds
         setTimeout(() => {
-            contactForm.reset();
-            submitButton.textContent = originalText;
-            submitButton.style.backgroundColor = '';
-        }, 2000);
-    });
+          formStatus.textContent = '';
+          closeModal();
+        }, 3000);
+      } else {
+        // Error response from server
+        showFormStatus(result.error || 'An error occurred. Please try again.', 'error');
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      showFormStatus('Network error. Please check your connection and try again.', 'error');
+      submitButton.textContent = originalText;
+      submitButton.disabled = false;
+    }
+  });
+}
+
+/**
+ * Display form status message
+ */
+function showFormStatus(message, type) {
+  formStatus.textContent = message;
+  formStatus.className = `form-status form-status--${type}`;
+  formStatus.style.display = 'block';
+
+  // Scroll to message
+  formStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // ============================================
