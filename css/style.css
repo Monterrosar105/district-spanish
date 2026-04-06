@@ -1170,7 +1170,7 @@ a.btn-whatsapp-large:hover {
    ============================================ */
 
 .contact {
-    padding: 80px 20px;
+    padding: 50px 20px;
     background-color: var(--light-bg);
 }
 
@@ -1178,7 +1178,7 @@ a.btn-whatsapp-large:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 50px;
+    margin-top: 30px;
 }
 
 .contact-grid .contact-info {
