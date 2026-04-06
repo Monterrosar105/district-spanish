@@ -1593,6 +1593,21 @@ a.btn-whatsapp-large:hover {
     text-align: center;
 }
 
+.program-modal-divider {
+    border: none;
+    border-top: 2px solid var(--border-color);
+    margin: 16px 0 20px;
+}
+
+.program-modal-footer {
+    margin-top: 28px;
+    text-align: center;
+}
+
+.program-modal-footer .btn {
+    min-width: 240px;
+}
+
 @media (max-width: 768px) {
     .modal-content-wide {
         max-width: 95%;

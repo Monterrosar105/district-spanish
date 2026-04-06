@@ -120,6 +120,14 @@ if (heroOpenFormModal) {
   });
 }
 
+// Open form modal from program modal "Book FREE Level Assessment" buttons
+document.querySelectorAll('.open-form-modal-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    closeProgramModals();
+    openModal();
+  });
+});
+
 // Close modal
 function closeModal() {
   formModal.classList.remove('active');
