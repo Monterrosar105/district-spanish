@@ -288,27 +288,43 @@
             
             <div class="culture-grid">
                 <div class="culture-card">
-                    <div class="culture-image">
-                        <img src="./images/culture/conversation-clubs.png" alt="Conversation Clubs">
+                    <div class="culture-carousel">
+                        <div class="carousel-track">
+                            <img src="./images/culture/conversation-clubs.png" alt="Conversation Clubs" class="carousel-slide active">
+                            <img src="./images/culture/cultural-events.png" alt="Cultural gathering" class="carousel-slide">
+                            <img src="./images/culture/real-life-speaking.png" alt="Speaking practice" class="carousel-slide">
+                        </div>
+                        <button class="carousel-btn carousel-prev" aria-label="Previous">&#8249;</button>
+                        <button class="carousel-btn carousel-next" aria-label="Next">&#8250;</button>
+                        <div class="carousel-dots">
+                            <span class="carousel-dot active"></span>
+                            <span class="carousel-dot"></span>
+                            <span class="carousel-dot"></span>
+                        </div>
                     </div>
                     <h3>💬 Conversation Clubs</h3>
                     <p>Join weekly conversation clubs where students chat about real topics, share experiences, and build friendships.</p>
+                    <button class="btn-learn-more" data-culture-modal="conversationModal">LEARN MORE</button>
                 </div>
                 
                 <div class="culture-card">
-                    <div class="culture-image">
-                        <img src="./images/culture/cultural-events.png" alt="Cultural Events">
+                    <div class="culture-carousel">
+                        <div class="carousel-track">
+                            <img src="./images/culture/cultural-events.png" alt="Cultural Events" class="carousel-slide active">
+                            <img src="./images/culture/real-life-speaking.png" alt="Speaking at events" class="carousel-slide">
+                            <img src="./images/culture/conversation-clubs.png" alt="Community gathering" class="carousel-slide">
+                        </div>
+                        <button class="carousel-btn carousel-prev" aria-label="Previous">&#8249;</button>
+                        <button class="carousel-btn carousel-next" aria-label="Next">&#8250;</button>
+                        <div class="carousel-dots">
+                            <span class="carousel-dot active"></span>
+                            <span class="carousel-dot"></span>
+                            <span class="carousel-dot"></span>
+                        </div>
                     </div>
                     <h3>🎉 Cultural Events</h3>
                     <p>Participate in virtual cultural events, discussions about Spanish-speaking countries, movies, music, and traditions.</p>
-                </div>
-                
-                <div class="culture-card">
-                    <div class="culture-image">
-                        <img src="./images/culture/real-life-speaking.png" alt="Real-Life Speaking">
-                    </div>
-                    <h3>🌍 Real-Life Speaking</h3>
-                    <p>Take part in challenges and activities designed to use Spanish in real situations, building confidence and fluency.</p>
+                    <button class="btn-learn-more" data-culture-modal="culturalEventsModal">LEARN MORE</button>
                 </div>
             </div>
             
@@ -808,6 +824,40 @@
     <a href="https://wa.me/14155552671?text=Hi%20District%20Spanish!%20I%20want%20to%20learn%20Spanish" class="whatsapp-button" target="_blank" title="Contact us on WhatsApp">
         <img src="./images/whatsapp.png" alt="WhatsApp" class="whatsapp-button-img">
     </a>
+
+    <!-- Conversation Clubs Modal -->
+    <div id="conversationModal" class="culture-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="convModalTitle">
+        <div class="culture-modal-box">
+            <button class="culture-modal-close" aria-label="Close">&times;</button>
+            <img src="./images/culture/conversation-clubs.png" alt="Conversation Clubs" class="culture-modal-img">
+            <h3 id="convModalTitle">💬 Conversation Clubs</h3>
+            <p>Our weekly Conversation Clubs bring together students of all levels for guided discussions entirely in Spanish. Each session focuses on a fresh topic — current events, travel stories, food, movies, and more — so every meeting feels natural and engaging.</p>
+            <ul class="culture-modal-list">
+                <li>📅 Every week with flexible scheduling</li>
+                <li>👥 Small groups of 4–8 students</li>
+                <li>🗣️ Facilitated by native Spanish speakers</li>
+                <li>📈 Builds real confidence and fluency</li>
+                <li>🌎 Connect with a global Spanish-speaking community</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Cultural Events Modal -->
+    <div id="culturalEventsModal" class="culture-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+        <div class="culture-modal-box">
+            <button class="culture-modal-close" aria-label="Close">&times;</button>
+            <img src="./images/culture/cultural-events.png" alt="Cultural Events" class="culture-modal-img">
+            <h3 id="eventModalTitle">🎉 Cultural Events</h3>
+            <p>Immerse yourself in the richness of Spanish-speaking cultures through our virtual and in-person events. From classic film nights to traditional holiday celebrations, every event opens a new window into the Spanish-speaking world.</p>
+            <ul class="culture-modal-list">
+                <li>🎬 Spanish film nights with guided discussion</li>
+                <li>🎵 Music and dance workshops</li>
+                <li>🍽️ Virtual cooking and food culture sessions</li>
+                <li>🎊 Celebrate Día de los Muertos, Carnaval, and more</li>
+                <li>🏛️ Virtual tours of Latin American and Spanish landmarks</li>
+            </ul>
+        </div>
+    </div>
 
     <script src="./js/app.js"></script>
 </body>

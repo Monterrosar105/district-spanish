@@ -502,6 +502,103 @@ document.addEventListener('click', (e) => {
 });
 
 // ============================================
+// CULTURE SECTION CAROUSELS
+// ============================================
+
+document.querySelectorAll('.culture-carousel').forEach(carousel => {
+    const slides = carousel.querySelectorAll('.carousel-slide');
+    const dots = carousel.querySelectorAll('.carousel-dot');
+    const prevBtn = carousel.querySelector('.carousel-prev');
+    const nextBtn = carousel.querySelector('.carousel-next');
+    let current = 0;
+    let autoSlide;
+
+    function goTo(index) {
+        slides[current].classList.remove('active');
+        if (dots[current]) dots[current].classList.remove('active');
+        current = (index + slides.length) % slides.length;
+        slides[current].classList.add('active');
+        if (dots[current]) dots[current].classList.add('active');
+    }
+
+    function startAuto() {
+        autoSlide = setInterval(() => goTo(current + 1), 4000);
+    }
+
+    function stopAuto() {
+        clearInterval(autoSlide);
+    }
+
+    function handleInteraction(action) {
+        stopAuto();
+        action();
+        startAuto();
+    }
+
+    prevBtn.addEventListener('click', () => handleInteraction(() => goTo(current - 1)));
+    nextBtn.addEventListener('click', () => handleInteraction(() => goTo(current + 1)));
+    dots.forEach((dot, i) => dot.addEventListener('click', () => handleInteraction(() => goTo(i))));
+
+    startAuto();
+});
+
+// ============================================
+// CULTURE ACTIVITY MODALS
+// ============================================
+
+let lastCultureModalTrigger = null;
+
+function openCultureModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('is-visible');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        const closeBtn = modal.querySelector('.culture-modal-close');
+        if (closeBtn) closeBtn.focus();
+    }
+}
+
+function closeCultureModal(modal) {
+    modal.classList.remove('is-visible');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = 'auto';
+    if (lastCultureModalTrigger) {
+        lastCultureModalTrigger.focus();
+        lastCultureModalTrigger = null;
+    }
+}
+
+document.querySelectorAll('[data-culture-modal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        lastCultureModalTrigger = btn;
+        openCultureModal(btn.getAttribute('data-culture-modal'));
+    });
+});
+
+document.querySelectorAll('.culture-modal-close').forEach(btn => {
+    btn.addEventListener('click', () => {
+        closeCultureModal(btn.closest('.culture-modal-overlay'));
+    });
+});
+
+document.querySelectorAll('.culture-modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeCultureModal(overlay);
+        }
+    });
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.culture-modal-overlay.is-visible').forEach(overlay => {
+            closeCultureModal(overlay);
+        });
+    }
+});
+
+// ============================================
 // READY STATE
 // ============================================
 
