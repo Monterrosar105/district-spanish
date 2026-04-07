@@ -942,30 +942,6 @@ a.btn-whatsapp-large:hover {
     transform: translateY(-10px);
 }
 
-.pricing-featured {
-    border-color: var(--primary-color);
-    box-shadow: 0 20px 40px rgba(246, 149, 33, 0.2);
-    transform: scale(1.05);
-}
-
-@media (max-width: 768px) {
-    .pricing-featured {
-        transform: scale(1);
-    }
-}
-
-.pricing-badge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--primary-color);
-    color: white;
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.85rem;
-}
 
 .pricing-card h3 {
     margin-bottom: 10px;
@@ -1073,6 +1049,7 @@ a.btn-whatsapp-large:hover {
     gap: 16px;
     margin: 20px 0;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .social-link {
@@ -1193,7 +1170,7 @@ a.btn-whatsapp-large:hover {
    ============================================ */
 
 .contact {
-    padding: 80px 20px;
+    padding: 50px 20px;
     background-color: var(--light-bg);
 }
 
@@ -1201,7 +1178,7 @@ a.btn-whatsapp-large:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 50px;
+    margin-top: 30px;
 }
 
 .contact-grid .contact-info {
