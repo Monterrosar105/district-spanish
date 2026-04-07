@@ -866,23 +866,7 @@ a.btn-whatsapp-large:hover {
     transform: translateY(-5px);
 }
 
-.culture-image {
-    width: 100%;
-    height: 200px;
-    margin-bottom: 20px;
-    border-radius: 12px;
-    overflow: hidden;
-    background-color: var(--light-bg);
-}
-
-.culture-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: var(--transition);
-}
-
-.culture-card:hover .culture-image img {
+.culture-card:hover .carousel-slide.active {
     transform: scale(1.05);
 }
 
@@ -908,6 +892,199 @@ a.btn-whatsapp-large:hover {
     .culture-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ============================================
+   CULTURE CAROUSEL
+   ============================================ */
+
+.culture-carousel {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: var(--light-bg);
+}
+
+.carousel-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.carousel-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.3s ease;
+}
+
+.carousel-slide.active {
+    opacity: 1;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.carousel-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.carousel-prev { left: 8px; }
+.carousel-next { right: 8px; }
+
+.carousel-dots {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+}
+
+.carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.carousel-dot.active {
+    background: white;
+}
+
+/* ============================================
+   CULTURE CARD LEARN MORE BUTTON
+   ============================================ */
+
+.btn-learn-more {
+    margin-top: 16px;
+    padding: 10px 28px;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-learn-more:hover {
+    background: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   CULTURE ACTIVITY MODALS
+   ============================================ */
+
+.culture-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.culture-modal-overlay.is-visible {
+    display: flex;
+}
+
+.culture-modal-box {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 100%;
+    padding: 32px;
+    position: relative;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+}
+
+.culture-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--light-text);
+    transition: color 0.2s ease;
+}
+
+.culture-modal-close:hover {
+    color: var(--dark-text);
+}
+
+.culture-modal-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.culture-modal-box h3 {
+    margin-bottom: 12px;
+    color: var(--dark-text);
+    font-size: 1.3rem;
+}
+
+.culture-modal-box p {
+    line-height: 1.8;
+    margin-bottom: 16px;
+    color: var(--light-text);
+}
+
+.culture-modal-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.culture-modal-list li {
+    padding: 6px 0;
+    line-height: 1.7;
+    color: var(--dark-text);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.culture-modal-list li:last-child {
+    border-bottom: none;
 }
 
 /* ============================================
