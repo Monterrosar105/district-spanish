@@ -960,6 +960,7 @@ a.btn-whatsapp-large:hover {
 
 .culture {
     padding: 80px 20px;
+    background-color: var(--light-bg);
 }
 
 .culture-grid {
@@ -1295,7 +1296,6 @@ a.btn-whatsapp-large:hover {
 
 .our-story {
     padding: 80px 20px;
-    background-color: var(--light-bg);
 }
 
 .our-story-grid {
@@ -1464,8 +1464,7 @@ a.btn-whatsapp-large:hover {
    ============================================ */
 
 .contact {
-    padding: 50px 20px;
-    background-color: var(--light-bg);
+    padding: 30px 20px;
 }
 
 .contact-grid {
