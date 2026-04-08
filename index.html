@@ -188,6 +188,7 @@
                     <p class="teacher-country">🇸🇻 El Salvador</p>
                     <p class="teacher-specialty">Founder & Instructor</p>
                     <p class="teacher-tagline">10+ years | Makes learning fun and captivating</p>
+                    <button class="btn-teacher-more" data-teacher-modal="gerardoModal">Learn More</button>
                 </div>
                 
                 <!-- Teacher 2 -->
@@ -199,6 +200,7 @@
                     <p class="teacher-country">🇨🇴 Colombia</p>
                     <p class="teacher-specialty">Instructor</p>
                     <p class="teacher-tagline">TEFL Certified | Passionate about cultural exchange</p>
+                    <button class="btn-teacher-more" data-teacher-modal="felipeModal">Learn More</button>
                 </div>
                 
                 <!-- Teacher 3 -->
@@ -210,6 +212,7 @@
                     <p class="teacher-country">🇻🇪 Venezuela</p>
                     <p class="teacher-specialty">Instructor</p>
                     <p class="teacher-tagline">Education Major | Creative & engaging teacher</p>
+                    <button class="btn-teacher-more" data-teacher-modal="marianaModal">Learn More</button>
                 </div>
                 
                 <!-- Teacher 4 -->
@@ -220,7 +223,8 @@
                     <h3>Olga Chang</h3>
                     <p class="teacher-country">🇨🇷 Costa Rica</p>
                     <p class="teacher-specialty">Instructor</p>
-                    <p class="teacher-tagline">20+ years | Focused on student success</p>   
+                    <p class="teacher-tagline">20+ years | Focused on student success</p>
+                    <button class="btn-teacher-more" data-teacher-modal="olgaModal">Learn More</button>
                 </div>
                 
                 <!-- Teacher 5 -->
@@ -232,6 +236,7 @@
                     <p class="teacher-country">🇨🇷 Costa Rica</p>
                     <p class="teacher-specialty">Instructor</p>
                     <p class="teacher-tagline">15+ years | Inspires meaningful learning</p>
+                    <button class="btn-teacher-more" data-teacher-modal="ginethModal">Learn More</button>
                 </div>
             </div>
         </div>
@@ -290,29 +295,9 @@
                 <div class="culture-card">
                     <div class="culture-carousel">
                         <div class="carousel-track">
-                            <img src="./images/culture/conversation-clubs.png" alt="Conversation Clubs" class="carousel-slide active">
-                            <img src="./images/culture/cultural-events.png" alt="Cultural gathering" class="carousel-slide">
-                            <img src="./images/culture/real-life-speaking.png" alt="Speaking practice" class="carousel-slide">
-                        </div>
-                        <button class="carousel-btn carousel-prev" aria-label="Previous">&#8249;</button>
-                        <button class="carousel-btn carousel-next" aria-label="Next">&#8250;</button>
-                        <div class="carousel-dots">
-                            <span class="carousel-dot active"></span>
-                            <span class="carousel-dot"></span>
-                            <span class="carousel-dot"></span>
-                        </div>
-                    </div>
-                    <h3>💬 Conversation Clubs</h3>
-                    <p>Join weekly conversation clubs where students chat about real topics, share experiences, and build friendships.</p>
-                    <button class="btn-learn-more" data-culture-modal="conversationModal">LEARN MORE</button>
-                </div>
-                
-                <div class="culture-card">
-                    <div class="culture-carousel">
-                        <div class="carousel-track">
-                            <img src="./images/culture/cultural-events.png" alt="Cultural Events" class="carousel-slide active">
-                            <img src="./images/culture/real-life-speaking.png" alt="Speaking at events" class="carousel-slide">
-                            <img src="./images/culture/conversation-clubs.png" alt="Community gathering" class="carousel-slide">
+                            <img src="./images/cultural-events/cultural-events-1.png" alt="Cultural Events" class="carousel-slide active">
+                            <img src="./images/cultural-events/cultural-events-2.png" alt="Cultural gathering" class="carousel-slide">
+                            <img src="./images/cultural-events/cultural-events-3.png" alt="Community celebration" class="carousel-slide">
                         </div>
                         <button class="carousel-btn carousel-prev" aria-label="Previous">&#8249;</button>
                         <button class="carousel-btn carousel-next" aria-label="Next">&#8250;</button>
@@ -323,8 +308,28 @@
                         </div>
                     </div>
                     <h3>🎉 Cultural Events</h3>
-                    <p>Participate in virtual cultural events, discussions about Spanish-speaking countries, movies, music, and traditions.</p>
+                    <p>Participate in virtual and in-person cultural events, discussions about Spanish-speaking countries, movies, music, and traditions.</p>
                     <button class="btn-learn-more" data-culture-modal="culturalEventsModal">LEARN MORE</button>
+                </div>
+                
+                <div class="culture-card">
+                    <div class="culture-carousel">
+                        <div class="carousel-track">
+                            <img src="./images/immersion-trips/immersion-trips-1.png" alt="Immersion Trips" class="carousel-slide active">
+                            <img src="./images/immersion-trips/immersion-trips-2.png" alt="Travel and language immersion" class="carousel-slide">
+                            <img src="./images/immersion-trips/immersion-trips-3.png" alt="Exploring Spanish-speaking countries" class="carousel-slide">
+                        </div>
+                        <button class="carousel-btn carousel-prev" aria-label="Previous">&#8249;</button>
+                        <button class="carousel-btn carousel-next" aria-label="Next">&#8250;</button>
+                        <div class="carousel-dots">
+                            <span class="carousel-dot active"></span>
+                            <span class="carousel-dot"></span>
+                            <span class="carousel-dot"></span>
+                        </div>
+                    </div>
+                    <h3>✈️ Immersion Trips</h3>
+                    <p>Travel to Spanish-speaking countries with fellow students and experience total language immersion in real-life settings.</p>
+                    <button class="btn-learn-more" data-culture-modal="immersionTripsModal">LEARN MORE</button>
                 </div>
             </div>
             
@@ -825,28 +830,12 @@
         <img src="./images/whatsapp.png" alt="WhatsApp" class="whatsapp-button-img">
     </a>
 
-    <!-- Conversation Clubs Modal -->
-    <div id="conversationModal" class="culture-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="convModalTitle">
-        <div class="culture-modal-box">
-            <button class="culture-modal-close" aria-label="Close">&times;</button>
-            <img src="./images/culture/conversation-clubs.png" alt="Conversation Clubs" class="culture-modal-img">
-            <h3 id="convModalTitle">💬 Conversation Clubs</h3>
-            <p>Our weekly Conversation Clubs bring together students of all levels for guided discussions entirely in Spanish. Each session focuses on a fresh topic — current events, travel stories, food, movies, and more — so every meeting feels natural and engaging.</p>
-            <ul class="culture-modal-list">
-                <li>📅 Every week with flexible scheduling</li>
-                <li>👥 Small groups of 4–8 students</li>
-                <li>🗣️ Facilitated by native Spanish speakers</li>
-                <li>📈 Builds real confidence and fluency</li>
-                <li>🌎 Connect with a global Spanish-speaking community</li>
-            </ul>
-        </div>
-    </div>
-
+    <!-- Conversation Clubs Modal (kept for backwards compatibility, hidden) -->
     <!-- Cultural Events Modal -->
     <div id="culturalEventsModal" class="culture-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
         <div class="culture-modal-box">
             <button class="culture-modal-close" aria-label="Close">&times;</button>
-            <img src="./images/culture/cultural-events.png" alt="Cultural Events" class="culture-modal-img">
+            <img src="./images/cultural-events/cultural-events-1.png" alt="Cultural Events" class="culture-modal-img">
             <h3 id="eventModalTitle">🎉 Cultural Events</h3>
             <p>Immerse yourself in the richness of Spanish-speaking cultures through our virtual and in-person events. From classic film nights to traditional holiday celebrations, every event opens a new window into the Spanish-speaking world.</p>
             <ul class="culture-modal-list">
@@ -856,6 +845,104 @@
                 <li>🎊 Celebrate Día de los Muertos, Carnaval, and more</li>
                 <li>🏛️ Virtual tours of Latin American and Spanish landmarks</li>
             </ul>
+        </div>
+    </div>
+
+    <!-- Immersion Trips Modal -->
+    <div id="immersionTripsModal" class="culture-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="immersionModalTitle">
+        <div class="culture-modal-box">
+            <button class="culture-modal-close" aria-label="Close">&times;</button>
+            <img src="./images/immersion-trips/immersion-trips-1.png" alt="Immersion Trips" class="culture-modal-img">
+            <h3 id="immersionModalTitle">✈️ Immersion Trips</h3>
+            <p>Take your Spanish beyond the classroom with our guided immersion trips to Spanish-speaking countries. Travel with fellow students and experience the language in real-life settings, surrounded by native speakers and authentic culture.</p>
+            <ul class="culture-modal-list">
+                <li>🌎 Destinations across Latin America and Spain</li>
+                <li>🏡 Homestay and cultural exchange experiences</li>
+                <li>🗣️ Daily conversations with native speakers</li>
+                <li>🍴 Local food, music, and traditions</li>
+                <li>📸 Guided tours and language workshops on-site</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Teacher Modals -->
+    <!-- Gerardo Modal -->
+    <div id="gerardoModal" class="teacher-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="gerardoModalTitle">
+        <div class="teacher-modal-box">
+            <button class="teacher-modal-close" aria-label="Close">&times;</button>
+            <div class="teacher-modal-header">
+                <img src="./images/teachers/gerardo.png" alt="Gerardo Domínguez" class="teacher-modal-img">
+                <div>
+                    <h3 id="gerardoModalTitle">Gerardo Domínguez</h3>
+                    <p class="teacher-modal-country">🇸🇻 El Salvador</p>
+                    <p class="teacher-modal-specialty">Founder & Instructor</p>
+                </div>
+            </div>
+            <p class="teacher-modal-bio">Gerardo Dominguez is a proud native of El Salvador and has a background in engineering. He has worked in teaching both English and Spanish for over ten years, and loves working alongside students towards their language goals in a way that is captivating and fun. When not watching soccer, playing soccer, or talking about soccer, Gerardo enjoys playing guitar, pizza, Star Wars, biking, learning new languages, traveling with his beautiful wife and taking care of his three daughters. He would love to meet you and help you learn Spanish.</p>
+        </div>
+    </div>
+
+    <!-- Felipe Modal -->
+    <div id="felipeModal" class="teacher-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="felipeModalTitle">
+        <div class="teacher-modal-box">
+            <button class="teacher-modal-close" aria-label="Close">&times;</button>
+            <div class="teacher-modal-header">
+                <img src="./images/teachers/felipe.png" alt="Felipe Escudero" class="teacher-modal-img">
+                <div>
+                    <h3 id="felipeModalTitle">Felipe Escudero</h3>
+                    <p class="teacher-modal-country">🇨🇴 Colombia</p>
+                    <p class="teacher-modal-specialty">Instructor</p>
+                </div>
+            </div>
+            <p class="teacher-modal-bio">Felipe was born and raised in Colombia, where he grew up cycling the mountains and volcanoes of his native city of Manizales. When he wasn't biking, he was studying social sciences and obtaining his TEFL (Teaching English as a Second Language) certificate. He has been teaching English and Spanish to kids, teenagers, and adults for years. Besides his bike, he loves literature, geography, history, traveling and meeting people from all walks of life. Felipe believes that teaching is an amazing way to improve yourself because when you're a teacher you never stop learning and everyday is a new adventure with your students.</p>
+        </div>
+    </div>
+
+    <!-- Mariana Modal -->
+    <div id="marianaModal" class="teacher-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="marianaModalTitle">
+        <div class="teacher-modal-box">
+            <button class="teacher-modal-close" aria-label="Close">&times;</button>
+            <div class="teacher-modal-header">
+                <img src="./images/teachers/mariana.png" alt="Mariana Camacho" class="teacher-modal-img">
+                <div>
+                    <h3 id="marianaModalTitle">Mariana Camacho</h3>
+                    <p class="teacher-modal-country">🇻🇪 Venezuela</p>
+                    <p class="teacher-modal-specialty">Instructor</p>
+                </div>
+            </div>
+            <p class="teacher-modal-bio">Mariana was born in Venezuela and she is currently living in Costa Rica. She is a talented person who enjoys teaching and sharing her knowledge and experiences with others. On her free time she loves exercising, playing tennis, drawing and painting. She is very creative. Mariana studied Education majoring in Art. She has been teaching Spanish to kids and adults making their experience learning the language fun and welcoming.</p>
+        </div>
+    </div>
+
+    <!-- Olga Modal -->
+    <div id="olgaModal" class="teacher-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="olgaModalTitle">
+        <div class="teacher-modal-box">
+            <button class="teacher-modal-close" aria-label="Close">&times;</button>
+            <div class="teacher-modal-header">
+                <img src="./images/teachers/olga.png" alt="Olga Chang" class="teacher-modal-img">
+                <div>
+                    <h3 id="olgaModalTitle">Olga Chang</h3>
+                    <p class="teacher-modal-country">🇨🇷 Costa Rica</p>
+                    <p class="teacher-modal-specialty">Instructor</p>
+                </div>
+            </div>
+            <p class="teacher-modal-bio">Olga Chang was born and raised in Costa Rica. She loves spending quality time with her family and doing outdoors activities with her loved ones. One of her hobbies is watching movies, her favorite saga is Star Wars. She is a passionate teacher with more than 20 years of experience. She's focused on achieving a good impact on her students and helping them succeed with learning Spanish. She loves her culture and her language, as well as getting to know her students and their roots.</p>
+        </div>
+    </div>
+
+    <!-- Gineth Modal -->
+    <div id="ginethModal" class="teacher-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="ginethModalTitle">
+        <div class="teacher-modal-box">
+            <button class="teacher-modal-close" aria-label="Close">&times;</button>
+            <div class="teacher-modal-header">
+                <img src="./images/teachers/gineth.png" alt="Gineth Matarrita" class="teacher-modal-img">
+                <div>
+                    <h3 id="ginethModalTitle">Gineth Matarrita</h3>
+                    <p class="teacher-modal-country">🇨🇷 Costa Rica</p>
+                    <p class="teacher-modal-specialty">Instructor</p>
+                </div>
+            </div>
+            <p class="teacher-modal-bio">Gineth is a teacher with more than 15 years of experience. She was born in Nicoya, Costa Rica, near the Pacific coast, and grew up in the city of Heredia in the Central Valley. She is passionate about sports, especially soccer, and loves hiking in the mountains. She also enjoys traveling and learning about different cultures. Her favorite book is The Diary of Anne Frank. As an educator, Gineth strives to inspire her students and guide them on their journey to mastering Spanish, promoting meaningful and lasting learning.</p>
         </div>
     </div>
 
