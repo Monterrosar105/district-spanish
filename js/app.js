@@ -595,7 +595,42 @@ document.addEventListener('keydown', (e) => {
         document.querySelectorAll('.culture-modal-overlay.is-visible').forEach(overlay => {
             closeCultureModal(overlay);
         });
+        document.querySelectorAll('.teacher-modal-overlay.is-visible').forEach(overlay => {
+            closeTeacherModal(overlay);
+        });
     }
+});
+
+// ============================================
+// TEACHER MODALS
+// ============================================
+
+function openTeacherModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('is-visible');
+        modal.setAttribute('aria-hidden', 'false');
+
+        const closeBtn = modal.querySelector('.teacher-modal-close');
+        if (closeBtn) closeBtn.addEventListener('click', () => closeTeacherModal(modal));
+    }
+}
+
+function closeTeacherModal(modal) {
+    modal.classList.remove('is-visible');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+document.querySelectorAll('[data-teacher-modal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        openTeacherModal(btn.getAttribute('data-teacher-modal'));
+    });
+});
+
+document.querySelectorAll('.teacher-modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeTeacherModal(overlay);
+    });
 });
 
 // ============================================
