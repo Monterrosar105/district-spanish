@@ -1,0 +1,13 @@
+-- D1 base schema scaffold
+-- Final table design will be added later.
+
+-- Example structure placeholder
+-- CREATE TABLE IF NOT EXISTS leads (
+--   id INTEGER PRIMARY KEY AUTOINCREMENT,
+--   first_name TEXT NOT NULL,
+--   last_name TEXT NOT NULL,
+--   email TEXT NOT NULL,
+--   phone TEXT,
+--   level TEXT,
+--   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+-- );

@@ -194,7 +194,7 @@ async function sendEmailWithResend(apiKey, htmlContent, senderEmail) {
       },
       body: JSON.stringify({
         from: 'noreply@districtspanish.com',
-        to: 'gerardo@districtspanish.com',
+        to: 'team@districtspanish.com',
         subject: `New Contact Form Submission from ${senderEmail}`,
         html: htmlContent,
         reply_to: senderEmail
