@@ -20,19 +20,19 @@
       <h2>Page Usage Dashboard</h2>
       <div class="metric-grid" id="metricsGrid">
         <article class="metric-card">
-          <h3>Page Views Today</h3>
+          <h3>Page Views (24h)</h3>
           <p id="metricPageViews">0</p>
         </article>
         <article class="metric-card">
-          <h3>CTA Clicks Today</h3>
+          <h3>CTA Clicks (24h)</h3>
           <p id="metricCtaClicks">0</p>
         </article>
         <article class="metric-card">
-          <h3>Submit Attempts</h3>
+          <h3>Submit Attempts (24h)</h3>
           <p id="metricSubmitAttempts">0</p>
         </article>
         <article class="metric-card">
-          <h3>Submit Success</h3>
+          <h3>Submit Success (24h)</h3>
           <p id="metricSubmitSuccess">0</p>
         </article>
       </div>
@@ -66,6 +66,7 @@
               <th>Email</th>
               <th>Phone</th>
               <th>Level</th>
+              <th>Date Submitted</th>
               <th>Status</th>
               <th>Assigned To</th>
               <th>Admin Notes</th>
@@ -85,6 +86,17 @@
       <p id="dashboardStatus" class="status"></p>
     </section>
   </main>
+
+  <div id="leadDetailModal" class="detail-modal" aria-hidden="true">
+    <div class="detail-modal-overlay" data-close-detail-modal="true"></div>
+    <div class="detail-modal-card" role="dialog" aria-modal="true" aria-labelledby="leadDetailTitle">
+      <div class="detail-modal-header">
+        <h3 id="leadDetailTitle">Lead Details</h3>
+        <button id="closeLeadDetailModal" class="btn-secondary">Close</button>
+      </div>
+      <pre id="leadDetailContent" class="detail-json">Loading...</pre>
+    </div>
+  </div>
 
   <script src="./admin.js"></script>
 </body>

@@ -16,6 +16,7 @@ const ANALYTICS_ENDPOINT = `${WORKER_BASE_URL}/analytics/events`;
 
 let analyticsQueue = [];
 let analyticsFlushTimer = null;
+let analyticsInterval = null;
 
 function getSessionId() {
   const key = 'districtSpanishSessionId';
@@ -56,11 +57,22 @@ function flushAnalytics() {
     return;
   }
 
-  const payload = JSON.stringify({ events: analyticsQueue.splice(0, analyticsQueue.length) });
+  const batch = analyticsQueue.splice(0, analyticsQueue.length);
+  const payload = JSON.stringify({ events: batch });
 
   if (navigator.sendBeacon) {
     const blob = new Blob([payload], { type: 'application/json' });
-    navigator.sendBeacon(ANALYTICS_ENDPOINT, blob);
+    const sent = navigator.sendBeacon(ANALYTICS_ENDPOINT, blob);
+    if (!sent) {
+      fetch(ANALYTICS_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: true
+      }).catch(() => {
+        analyticsQueue = batch.concat(analyticsQueue);
+      });
+    }
   } else {
     fetch(ANALYTICS_ENDPOINT, {
       method: 'POST',
@@ -68,7 +80,7 @@ function flushAnalytics() {
       body: payload,
       keepalive: true
     }).catch(() => {
-      // Analytics failures should never block UX.
+      analyticsQueue = batch.concat(analyticsQueue);
     });
   }
 
@@ -76,8 +88,14 @@ function flushAnalytics() {
 }
 
 window.addEventListener('beforeunload', flushAnalytics);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    flushAnalytics();
+  }
+});
 window.addEventListener('load', () => {
   trackEvent('page_view', { title: document.title }, 'funnel');
+  analyticsInterval = window.setInterval(flushAnalytics, 7000);
 });
 
 // Toggle menu on hamburger click

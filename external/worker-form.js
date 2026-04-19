@@ -62,6 +62,10 @@ export default {
         return await handleAdminLeadUpdate(request, env, Number(leadPathMatch[1]));
       }
 
+      if (leadPathMatch && request.method === 'GET') {
+        return await handleAdminLeadDetail(request, env, Number(leadPathMatch[1]));
+      }
+
       if (path === '/admin/analytics/summary' && request.method === 'GET') {
         return await handleAnalyticsSummary(request, env);
       }
@@ -440,6 +444,25 @@ async function handleAdminLeadUpdate(request, env, leadId) {
   return jsonResponse({ success: true }, 200, env);
 }
 
+async function handleAdminLeadDetail(request, env, leadId) {
+  const session = await requireAdminSession(request, env);
+  if (!session.ok) return session.response;
+
+  const db = requireDb(env);
+  const row = await db.prepare(`
+    SELECT *
+    FROM leads
+    WHERE id = ?
+    LIMIT 1
+  `).bind(leadId).first();
+
+  if (!row) {
+    return jsonResponse({ error: 'Lead not found' }, 404, env);
+  }
+
+  return jsonResponse({ lead: row }, 200, env);
+}
+
 async function handleAnalyticsSummary(request, env) {
   const session = await requireAdminSession(request, env);
   if (!session.ok) return session.response;
@@ -451,6 +474,30 @@ async function handleAnalyticsSummary(request, env) {
     FROM daily_metrics
     WHERE metric_date = date('now')
     LIMIT 1
+  `).first();
+
+  const rolling24h = await db.prepare(`
+    SELECT
+      SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END) AS page_views,
+      SUM(CASE WHEN event_name = 'cta_click' THEN 1 ELSE 0 END) AS cta_clicks,
+      SUM(CASE WHEN event_name = 'form_open' THEN 1 ELSE 0 END) AS form_opens,
+      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
+      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
+      SUM(CASE WHEN event_name = 'form_submit_fail' THEN 1 ELSE 0 END) AS form_submit_fail
+    FROM analytics_events
+    WHERE created_at >= datetime('now', '-24 hours')
+  `).first();
+
+  const rolling7d = await db.prepare(`
+    SELECT
+      SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END) AS page_views,
+      SUM(CASE WHEN event_name = 'cta_click' THEN 1 ELSE 0 END) AS cta_clicks,
+      SUM(CASE WHEN event_name = 'form_open' THEN 1 ELSE 0 END) AS form_opens,
+      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
+      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
+      SUM(CASE WHEN event_name = 'form_submit_fail' THEN 1 ELSE 0 END) AS form_submit_fail
+    FROM analytics_events
+    WHERE created_at >= datetime('now', '-7 days')
   `).first();
 
   const statusRows = await db.prepare(`
@@ -469,6 +516,22 @@ async function handleAnalyticsSummary(request, env) {
       form_submit_attempts: 0,
       form_submit_success: 0,
       form_submit_fail: 0
+    },
+    rolling24h: {
+      page_views: Number(rolling24h?.page_views || 0),
+      cta_clicks: Number(rolling24h?.cta_clicks || 0),
+      form_opens: Number(rolling24h?.form_opens || 0),
+      form_submit_attempts: Number(rolling24h?.form_submit_attempts || 0),
+      form_submit_success: Number(rolling24h?.form_submit_success || 0),
+      form_submit_fail: Number(rolling24h?.form_submit_fail || 0)
+    },
+    rolling7d: {
+      page_views: Number(rolling7d?.page_views || 0),
+      cta_clicks: Number(rolling7d?.cta_clicks || 0),
+      form_opens: Number(rolling7d?.form_opens || 0),
+      form_submit_attempts: Number(rolling7d?.form_submit_attempts || 0),
+      form_submit_success: Number(rolling7d?.form_submit_success || 0),
+      form_submit_fail: Number(rolling7d?.form_submit_fail || 0)
     },
     leadStatus: statusRows.results || []
   }, 200, env);

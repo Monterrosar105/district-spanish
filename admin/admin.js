@@ -142,6 +142,21 @@ function wireDashboardEvents() {
       await loadLeads();
     }
   });
+
+  const closeBtn = document.getElementById('closeLeadDetailModal');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeLeadDetailModal);
+  }
+
+  document.querySelectorAll('[data-close-detail-modal="true"]').forEach((node) => {
+    node.addEventListener('click', closeLeadDetailModal);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeLeadDetailModal();
+    }
+  });
 }
 
 async function loadLeads() {
@@ -170,7 +185,7 @@ function renderLeadsTable(leads) {
   const tbody = document.getElementById('leadsTableBody');
 
   if (leads.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8">No leads found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9">No leads found.</td></tr>';
     return;
   }
 
@@ -178,19 +193,21 @@ function renderLeadsTable(leads) {
     const name = `${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}`.trim();
     return `
       <tr>
-        <td>${name}</td>
-        <td>${escapeHtml(lead.email || '')}</td>
-        <td>${escapeHtml(lead.phone || '')}</td>
-        <td>${escapeHtml(lead.spanish_level || '')}</td>
-        <td>
+        <td data-label="Name">${name}</td>
+        <td data-label="Email">${escapeHtml(lead.email || '')}</td>
+        <td data-label="Phone">${escapeHtml(lead.phone || '')}</td>
+        <td data-label="Level">${escapeHtml(lead.spanish_level || '')}</td>
+        <td data-label="Date Submitted">${formatDate(lead.created_at)}</td>
+        <td data-label="Status">
           <select data-role="status" data-id="${lead.id}">
             ${statusOptionsMarkup(lead.status)}
           </select>
         </td>
-        <td><input data-role="assigned" data-id="${lead.id}" value="${escapeHtml(lead.assigned_to || '')}" /></td>
-        <td><textarea data-role="notes" data-id="${lead.id}" rows="2"></textarea></td>
-        <td>
+        <td data-label="Assigned To"><input data-role="assigned" data-id="${lead.id}" value="${escapeHtml(lead.assigned_to || '')}" /></td>
+        <td data-label="Admin Notes"><textarea data-role="notes" data-id="${lead.id}" rows="2"></textarea></td>
+        <td data-label="Actions">
           <div class="actions">
+            <button class="btn-secondary" data-role="view" data-id="${lead.id}">View</button>
             <button class="btn-secondary" data-role="save" data-id="${lead.id}">Save</button>
           </div>
         </td>
@@ -200,6 +217,10 @@ function renderLeadsTable(leads) {
 
   tbody.querySelectorAll('button[data-role="save"]').forEach((button) => {
     button.addEventListener('click', () => updateLeadRow(Number(button.dataset.id)));
+  });
+
+  tbody.querySelectorAll('button[data-role="view"]').forEach((button) => {
+    button.addEventListener('click', () => viewLeadDetail(Number(button.dataset.id)));
   });
 }
 
@@ -244,17 +265,54 @@ async function loadAnalyticsSummary() {
     return;
   }
 
-  const today = data.today || {};
-  document.getElementById('metricPageViews').textContent = Number(today.page_views || 0);
-  document.getElementById('metricCtaClicks').textContent = Number(today.cta_clicks || 0);
-  document.getElementById('metricSubmitAttempts').textContent = Number(today.form_submit_attempts || 0);
-  document.getElementById('metricSubmitSuccess').textContent = Number(today.form_submit_success || 0);
+  const rolling24h = data.rolling24h || data.today || {};
+  document.getElementById('metricPageViews').textContent = Number(rolling24h.page_views || 0);
+  document.getElementById('metricCtaClicks').textContent = Number(rolling24h.cta_clicks || 0);
+  document.getElementById('metricSubmitAttempts').textContent = Number(rolling24h.form_submit_attempts || 0);
+  document.getElementById('metricSubmitSuccess').textContent = Number(rolling24h.form_submit_success || 0);
 
   const statusList = document.getElementById('statusBreakdownList');
   const statusRows = Array.isArray(data.leadStatus) ? data.leadStatus : [];
   statusList.innerHTML = statusRows.length === 0
     ? '<li>No lead status data yet.</li>'
     : statusRows.map((row) => `<li>${escapeHtml(row.status)}: ${Number(row.count || 0)}</li>`).join('');
+}
+
+async function viewLeadDetail(leadId) {
+  setStatus('dashboardStatus', `Loading full record for lead #${leadId}...`);
+  const { response, data } = await apiFetch(`/admin/leads/${leadId}`, { method: 'GET' });
+
+  if (!response.ok) {
+    setStatus('dashboardStatus', data.error || 'Unable to load lead details.', true);
+    return;
+  }
+
+  openLeadDetailModal(data.lead || {});
+  setStatus('dashboardStatus', `Showing full record for lead #${leadId}.`);
+}
+
+function openLeadDetailModal(lead) {
+  const modal = document.getElementById('leadDetailModal');
+  const content = document.getElementById('leadDetailContent');
+  if (!modal || !content) return;
+
+  content.textContent = JSON.stringify(lead, null, 2);
+  modal.classList.add('is-visible');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeLeadDetailModal() {
+  const modal = document.getElementById('leadDetailModal');
+  if (!modal) return;
+  modal.classList.remove('is-visible');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function formatDate(value) {
+  if (!value) return '-';
+  const parsed = new Date(value.includes('T') ? value : `${value}Z`);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString();
 }
 
 function escapeHtml(value) {
