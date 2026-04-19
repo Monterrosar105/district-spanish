@@ -32,10 +32,19 @@ Cloudflare Worker secret:
 - Type: Secret
 - Value: valid Resend API key
 
+Cloudflare Worker binding:
+- D1 binding variable name: DB
+
 ### Expected Runtime Behavior
 - OPTIONS: returns 204 for preflight
-- POST: validates payload and sends email via Resend
-- Other methods: returns method not allowed
+- POST /form (and POST / for compatibility): validates payload, stores lead in D1, sends email via Resend
+- POST /analytics/events: stores funnel events and updates daily counters
+- POST /admin/login: validates admin credentials and issues session token
+- GET /admin/session: validates session token
+- POST /admin/logout: revokes session token
+- GET /admin/leads: paginated lead list for admin table
+- PATCH /admin/leads/:id: updates status/notes/assignment
+- GET /admin/analytics/summary: returns KPI summary and status breakdown
 
 ### Current Email Routing
 - from: noreply@districtspanish.com
@@ -52,20 +61,35 @@ If this changes, update it in js/app.js and redeploy static site.
 D1 files in repo:
 - external/d1/sql/schema.sql
 - external/d1/migrations/001_init.sql
+- external/d1/migrations/002_admin_auth.sql
+- external/d1/migrations/003_analytics_core.sql
+- external/d1/sql/seed_admin.sql
 
 Usage model:
 - Update SQL files in repo.
-- Apply these SQL artifacts during Cloudflare D1 setup (dashboard or CLI).
+- Apply migrations in order during Cloudflare D1 setup (dashboard or CLI).
 - Keep migration files additive.
 
-## E. Verification Checklist
+## E. Admin Frontend Deployment
+Admin files in repo:
+- admin/index.html
+- admin/dashboard.html
+- admin/admin.js
+- admin/style.css
+
+These are static files and deploy with the rest of the site.
+
+## F. Verification Checklist
 1. Open site and submit form with valid test data.
 2. Confirm success status appears in UI.
 3. Confirm email received at team@districtspanish.com.
-4. If failed, inspect Worker logs and Resend response payload.
+4. Confirm lead row exists in D1 `leads` table.
+5. Login through admin/index.html and verify admin dashboard loads.
+6. If failed, inspect Worker logs and Resend/D1 responses.
 
-## F. Common Failure Causes
+## G. Common Failure Causes
 - Missing RESEND_API_KEY secret
+- Missing DB binding
 - Invalid Resend API key
 - Sender identity/domain not verified in Resend
 - Incorrect Worker URL in js/app.js

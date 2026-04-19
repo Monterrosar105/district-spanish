@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>District Spanish Admin Dashboard</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body data-page="dashboard">
+  <header class="admin-header">
+    <div>
+      <h1>District Spanish Admin</h1>
+      <p>Lead tracking and usage dashboard</p>
+    </div>
+    <button id="logoutBtn" class="btn-secondary">Log Out</button>
+  </header>
+
+  <main class="admin-main">
+    <section class="panel">
+      <h2>Page Usage Dashboard</h2>
+      <div class="metric-grid" id="metricsGrid">
+        <article class="metric-card">
+          <h3>Page Views Today</h3>
+          <p id="metricPageViews">0</p>
+        </article>
+        <article class="metric-card">
+          <h3>CTA Clicks Today</h3>
+          <p id="metricCtaClicks">0</p>
+        </article>
+        <article class="metric-card">
+          <h3>Submit Attempts</h3>
+          <p id="metricSubmitAttempts">0</p>
+        </article>
+        <article class="metric-card">
+          <h3>Submit Success</h3>
+          <p id="metricSubmitSuccess">0</p>
+        </article>
+      </div>
+      <div class="status-breakdown">
+        <h3>Lead Status Breakdown</h3>
+        <ul id="statusBreakdownList"></ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Form Submission Tracking</h2>
+      <div class="toolbar">
+        <input id="searchInput" type="search" placeholder="Search by name, email, phone">
+        <select id="statusFilter">
+          <option value="">All statuses</option>
+          <option value="new">new</option>
+          <option value="contacted">contacted</option>
+          <option value="follow-up">follow-up</option>
+          <option value="trial-scheduled">trial-scheduled</option>
+          <option value="enrolled">enrolled</option>
+          <option value="closed-lost">closed-lost</option>
+        </select>
+        <button id="refreshBtn" class="btn-secondary">Refresh</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Level</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+              <th>Admin Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="leadsTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button id="prevPageBtn" class="btn-secondary">Previous</button>
+        <span id="pageInfo">Page 1</span>
+        <button id="nextPageBtn" class="btn-secondary">Next</button>
+      </div>
+
+      <p id="dashboardStatus" class="status"></p>
+    </section>
+  </main>
+
+  <script src="./admin.js"></script>
+</body>
+</html>

@@ -16,12 +16,32 @@ Last updated: 2026-04-16
 - Worker sender: noreply@districtspanish.com
 - Worker recipient: team@districtspanish.com
 - Required Worker secret: RESEND_API_KEY (type: Secret)
+- Required Worker D1 binding: DB
+
+## Admin App (Implemented Scaffold)
+- admin/index.html: username/password login page
+- admin/dashboard.html: lead tracking + usage dashboard view
+- admin/admin.js: auth/session, lead updates, analytics summary loading
+- admin/style.css: admin UI styling
+
+## Worker Route Surface (Current)
+- POST /form (also POST / for compatibility): create lead + send email
+- POST /analytics/events: ingest essential funnel events
+- POST /admin/login: create admin session token
+- GET /admin/session: validate current session
+- POST /admin/logout: revoke current session
+- GET /admin/leads: paginated lead list with filters
+- PATCH /admin/leads/:id: update status/notes/assignment/contact timestamp
+- GET /admin/analytics/summary: KPI + lead status breakdown
 
 ## External Infrastructure Layout
 - external/worker-form.js: Cloudflare Worker source of truth in this repo
 - external/d1/README.md: D1 setup context and workflow notes
-- external/d1/sql/schema.sql: shared schema scaffold for D1 setup
-- external/d1/migrations/001_init.sql: initial migration scaffold
+- external/d1/sql/schema.sql: consolidated D1 schema snapshot
+- external/d1/sql/seed_admin.sql: first admin user seed template
+- external/d1/migrations/001_init.sql: leads + metadata schema
+- external/d1/migrations/002_admin_auth.sql: admin users + sessions
+- external/d1/migrations/003_analytics_core.sql: analytics events + daily metrics
 
 ## Important Deployment Model
 - The repo Worker file is not auto-connected to Cloudflare.

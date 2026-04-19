@@ -15,7 +15,8 @@ Edit in external/worker-form.js:
 
 ## Form Endpoint
 Edit in js/app.js:
-- fetch URL points to Cloudflare Worker deployment
+- FORM_ENDPOINT points to Cloudflare Worker form route (`/form`)
+- ANALYTICS_ENDPOINT points to Worker analytics route (`/analytics/events`)
 
 Use this if Worker URL changes between environments.
 
@@ -48,11 +49,20 @@ When replacing assets:
 ## Worker Behavior
 - Request validation and response codes: external/worker-form.js
 - Resend API integration payload: external/worker-form.js
-- CORS headers and OPTIONS handling: external/worker-form.js
+- CORS headers, auth/session endpoints, and analytics routes: external/worker-form.js
+
+## Admin App
+- Login page: admin/index.html
+- Dashboard page: admin/dashboard.html
+- Admin frontend logic: admin/admin.js
+- Admin styling: admin/style.css
 
 ## D1 SQL Artifacts
 - Schema scaffold: external/d1/sql/schema.sql
-- Migration scaffold: external/d1/migrations/001_init.sql
+- Admin seed template: external/d1/sql/seed_admin.sql
+- Leads migration: external/d1/migrations/001_init.sql
+- Admin auth migration: external/d1/migrations/002_admin_auth.sql
+- Analytics migration: external/d1/migrations/003_analytics_core.sql
 - D1 setup notes: external/d1/README.md
 
 These files are maintained in-repo so AI agents can reason about Worker plus database setup together.

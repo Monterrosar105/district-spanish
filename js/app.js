@@ -10,6 +10,76 @@ const hamburger = document.getElementById('hamburger');
 const navMenu = document.getElementById('navMenu');
 const navLinks = document.querySelectorAll('.nav-link');
 
+const WORKER_BASE_URL = 'https://district-spanish-form.robmonterrosa105.workers.dev';
+const FORM_ENDPOINT = `${WORKER_BASE_URL}/form`;
+const ANALYTICS_ENDPOINT = `${WORKER_BASE_URL}/analytics/events`;
+
+let analyticsQueue = [];
+let analyticsFlushTimer = null;
+
+function getSessionId() {
+  const key = 'districtSpanishSessionId';
+  let sessionId = sessionStorage.getItem(key);
+  if (!sessionId) {
+    sessionId = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    sessionStorage.setItem(key, sessionId);
+  }
+  return sessionId;
+}
+
+function getUtmParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    utmSource: params.get('utm_source') || '',
+    utmMedium: params.get('utm_medium') || '',
+    utmCampaign: params.get('utm_campaign') || ''
+  };
+}
+
+function trackEvent(eventName, metadata = {}, eventCategory = 'site') {
+  analyticsQueue.push({
+    sessionId: getSessionId(),
+    eventName,
+    eventCategory,
+    page: window.location.pathname,
+    metadata
+  });
+
+  if (!analyticsFlushTimer) {
+    analyticsFlushTimer = window.setTimeout(flushAnalytics, 1500);
+  }
+}
+
+function flushAnalytics() {
+  if (analyticsQueue.length === 0) {
+    analyticsFlushTimer = null;
+    return;
+  }
+
+  const payload = JSON.stringify({ events: analyticsQueue.splice(0, analyticsQueue.length) });
+
+  if (navigator.sendBeacon) {
+    const blob = new Blob([payload], { type: 'application/json' });
+    navigator.sendBeacon(ANALYTICS_ENDPOINT, blob);
+  } else {
+    fetch(ANALYTICS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true
+    }).catch(() => {
+      // Analytics failures should never block UX.
+    });
+  }
+
+  analyticsFlushTimer = null;
+}
+
+window.addEventListener('beforeunload', flushAnalytics);
+window.addEventListener('load', () => {
+  trackEvent('page_view', { title: document.title }, 'funnel');
+});
+
 // Toggle menu on hamburger click
 hamburger.addEventListener('click', () => {
     hamburger.classList.toggle('active');
@@ -95,19 +165,24 @@ const modalOverlay = document.getElementById('modalOverlay');
 
 // Open modal function
 function openModal() {
+  trackEvent('form_open', { source: 'cta-button' }, 'funnel');
   formModal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
 
 // Open modal from Contact Info button
 if (openFormModal) {
-  openFormModal.addEventListener('click', openModal);
+  openFormModal.addEventListener('click', () => {
+    trackEvent('cta_click', { source: 'contact-section', cta: 'Book FREE Level Assessment' }, 'funnel');
+    openModal();
+  });
 }
 
 // Open modal from Navbar button
 if (navOpenFormModal) {
   navOpenFormModal.addEventListener('click', (e) => {
     e.preventDefault();
+    trackEvent('cta_click', { source: 'navbar', cta: 'Book FREE Level Assessment' }, 'funnel');
     openModal();
   });
 }
@@ -116,6 +191,7 @@ if (navOpenFormModal) {
 if (heroOpenFormModal) {
   heroOpenFormModal.addEventListener('click', (e) => {
     e.preventDefault();
+    trackEvent('cta_click', { source: 'hero', cta: 'Book FREE Level Assessment' }, 'funnel');
     openModal();
   });
 }
@@ -123,6 +199,7 @@ if (heroOpenFormModal) {
 // Open form modal from program modal "Book FREE Level Assessment" buttons
 document.querySelectorAll('.open-form-modal-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    trackEvent('cta_click', { source: 'program-modal', cta: 'Book FREE Level Assessment' }, 'funnel');
     closeProgramModals();
     openModal();
   });
@@ -130,6 +207,7 @@ document.querySelectorAll('.open-form-modal-btn').forEach(btn => {
 
 // Close modal
 function closeModal() {
+  trackEvent('form_close', { source: 'modal-close' }, 'funnel');
   formModal.classList.remove('active');
   document.body.style.overflow = 'auto';
 }
@@ -215,6 +293,7 @@ if (contactForm) {
     }
 
     // Build form data object
+    const utm = getUtmParams();
     const formData = {
       firstName,
       lastName,
@@ -226,8 +305,19 @@ if (contactForm) {
       scheduleOther,
       comments,
       referralSource,
-      referralOther
+      referralOther,
+      utmSource: utm.utmSource,
+      utmMedium: utm.utmMedium,
+      utmCampaign: utm.utmCampaign,
+      formVersion: 'v1',
+      sessionId: getSessionId()
     };
+
+    trackEvent('form_submit_attempt', {
+      level,
+      referralSource,
+      hasScheduleSelection: schedule.length > 0
+    }, 'funnel');
 
     // Show loading state
     const submitButton = contactForm.querySelector('button[type="submit"]');
@@ -237,7 +327,7 @@ if (contactForm) {
 
     try {
       // Send POST request to Cloudflare Workers
-      const response = await fetch('https://district-spanish-form.robmonterrosa105.workers.dev/', {
+      const response = await fetch(FORM_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -248,6 +338,7 @@ if (contactForm) {
       const result = await response.json();
 
       if (response.ok) {
+        trackEvent('form_submit_success', { leadSource: referralSource }, 'funnel');
         // Success
         showFormStatus('✓ Thank you! We received your message and will contact you soon.', 'success');
         contactForm.reset();
@@ -264,6 +355,7 @@ if (contactForm) {
           closeModal();
         }, 3000);
       } else {
+        trackEvent('form_submit_fail', { reason: result.error || 'unknown' }, 'funnel');
         // Error response from server
         showFormStatus(result.error || 'An error occurred. Please try again.', 'error');
         submitButton.textContent = originalText;
@@ -271,6 +363,7 @@ if (contactForm) {
       }
     } catch (error) {
       console.error('Form submission error:', error);
+      trackEvent('form_submit_fail', { reason: 'network_error' }, 'funnel');
       showFormStatus('Network error. Please check your connection and try again.', 'error');
       submitButton.textContent = originalText;
       submitButton.disabled = false;

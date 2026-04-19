@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>District Spanish Admin Login</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body data-page="login">
+  <main class="auth-shell">
+    <section class="auth-card">
+      <h1>Admin Login</h1>
+      <p>Sign in to manage leads and analytics.</p>
+
+      <form id="loginForm" class="auth-form">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+        <button type="submit" class="btn-primary">Sign In</button>
+      </form>
+
+      <p id="loginStatus" class="status"></p>
+      <a class="back-link" href="../index.html">Back to website</a>
+    </section>
+  </main>
+
+  <script src="./admin.js"></script>
+</body>
+</html>
