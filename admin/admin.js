@@ -103,20 +103,12 @@ let currentPage = 1;
 let currentQuery = '';
 let currentStatus = '';
 let currentLevel = '';
-let currentFromDate = '';
-let currentToDate = '';
 let currentSortBy = 'created_at';
 let currentSortDir = 'desc';
 let currentTotal = 0;
 const pageSize = 20;
 
 function wireDashboardEvents() {
-  const fromDateInput = document.getElementById('fromDateFilter');
-  const toDateInput = document.getElementById('toDateFilter');
-  const today = getLocalDateIso();
-  if (fromDateInput) fromDateInput.max = today;
-  if (toDateInput) toDateInput.max = today;
-
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await apiFetch('/admin/logout', { method: 'POST' });
     clearToken();
@@ -141,18 +133,6 @@ function wireDashboardEvents() {
 
   document.getElementById('levelFilter').addEventListener('change', async (event) => {
     currentLevel = event.target.value;
-    currentPage = 1;
-    await loadLeads();
-  });
-
-  document.getElementById('fromDateFilter').addEventListener('change', async (event) => {
-    currentFromDate = event.target.value;
-    currentPage = 1;
-    await loadLeads();
-  });
-
-  document.getElementById('toDateFilter').addEventListener('change', async (event) => {
-    currentToDate = event.target.value;
     currentPage = 1;
     await loadLeads();
   });
@@ -220,8 +200,6 @@ async function loadLeads() {
   if (currentQuery) params.set('q', currentQuery);
   if (currentStatus) params.set('status', currentStatus);
   if (currentLevel) params.set('level', currentLevel);
-  if (currentFromDate) params.set('fromDate', currentFromDate);
-  if (currentToDate) params.set('toDate', currentToDate);
 
   const { response, data } = await apiFetch(`/admin/leads?${params.toString()}`);
   if (!response.ok) {
@@ -429,12 +407,6 @@ function formatScheduleValue(scheduleJson, scheduleOther) {
 
 function safeText(value) {
   return String(value || '').trim();
-}
-
-function getLocalDateIso() {
-  const now = new Date();
-  const offsetMs = now.getTimezoneOffset() * 60000;
-  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
 }
 
 function formatDate(value) {

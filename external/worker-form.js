@@ -391,8 +391,6 @@ async function handleAdminLeads(request, env) {
   const url = new URL(request.url);
   const status = safeString(url.searchParams.get('status'));
   const level = safeString(url.searchParams.get('level'));
-  const fromDate = safeString(url.searchParams.get('fromDate'));
-  const toDate = safeString(url.searchParams.get('toDate'));
   const query = safeString(url.searchParams.get('q'));
   const sortByRaw = safeString(url.searchParams.get('sortBy')) || 'created_at';
   const sortDirRaw = (safeString(url.searchParams.get('sortDir')) || 'desc').toLowerCase();
@@ -421,16 +419,6 @@ async function handleAdminLeads(request, env) {
   if (level) {
     where.push('spanish_level = ?');
     params.push(level);
-  }
-
-  if (isValidMetricDate(fromDate)) {
-    where.push('date(created_at) >= ?');
-    params.push(fromDate);
-  }
-
-  if (isValidMetricDate(toDate)) {
-    where.push('date(created_at) <= ?');
-    params.push(toDate);
   }
 
   if (query) {
