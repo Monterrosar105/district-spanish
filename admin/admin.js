@@ -104,8 +104,46 @@ let currentQuery = '';
 let currentStatus = '';
 let currentTotal = 0;
 const pageSize = 20;
+let selectedAnalyticsDate = getLocalDateIso();
 
 function wireDashboardEvents() {
+  const analyticsDateInput = document.getElementById('analyticsDate');
+  const analyticsTodayBtn = document.getElementById('analyticsTodayBtn');
+  const analyticsHistorySelect = document.getElementById('analyticsHistorySelect');
+
+  if (analyticsDateInput) {
+    const today = getLocalDateIso();
+    analyticsDateInput.max = today;
+    analyticsDateInput.value = selectedAnalyticsDate;
+    analyticsDateInput.addEventListener('change', async () => {
+      if (!analyticsDateInput.value) return;
+      selectedAnalyticsDate = analyticsDateInput.value;
+      await loadAnalyticsSummary();
+    });
+  }
+
+  if (analyticsTodayBtn) {
+    analyticsTodayBtn.addEventListener('click', async () => {
+      selectedAnalyticsDate = getLocalDateIso();
+      if (analyticsDateInput) {
+        analyticsDateInput.value = selectedAnalyticsDate;
+      }
+      await loadAnalyticsSummary();
+    });
+  }
+
+  if (analyticsHistorySelect) {
+    analyticsHistorySelect.addEventListener('change', async (event) => {
+      const selected = event.target.value;
+      if (!selected) return;
+      selectedAnalyticsDate = selected;
+      if (analyticsDateInput) {
+        analyticsDateInput.value = selected;
+      }
+      await loadAnalyticsSummary();
+    });
+  }
+
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await apiFetch('/admin/logout', { method: 'POST' });
     clearToken();
@@ -259,23 +297,38 @@ async function updateLeadRow(leadId) {
 }
 
 async function loadAnalyticsSummary() {
-  const { response, data } = await apiFetch('/admin/analytics/summary', { method: 'GET' });
+  const params = new URLSearchParams({ date: selectedAnalyticsDate });
+  const { response, data } = await apiFetch(`/admin/analytics/summary?${params.toString()}`, { method: 'GET' });
   if (!response.ok) {
     setStatus('dashboardStatus', data.error || 'Unable to load analytics.', true);
     return;
   }
 
-  const rolling24h = data.rolling24h || data.today || {};
-  document.getElementById('metricPageViews').textContent = Number(rolling24h.page_views || 0);
-  document.getElementById('metricCtaClicks').textContent = Number(rolling24h.cta_clicks || 0);
-  document.getElementById('metricSubmitAttempts').textContent = Number(rolling24h.form_submit_attempts || 0);
-  document.getElementById('metricSubmitSuccess').textContent = Number(rolling24h.form_submit_success || 0);
+  const daily = data.daily || data.today || {};
+  document.getElementById('metricPageViews').textContent = Number(daily.page_views || 0);
+  document.getElementById('metricCtaClicks').textContent = Number(daily.cta_clicks || 0);
+  document.getElementById('metricSubmitSuccess').textContent = Number(daily.form_submit_success || 0);
+
+  const historySelect = document.getElementById('analyticsHistorySelect');
+  if (historySelect) {
+    const historyRows = Array.isArray(data.dailyHistory) ? data.dailyHistory : [];
+    const options = ['<option value="">Recent active days</option>'].concat(historyRows.map((row) => {
+      const day = escapeHtml(row.metric_date || '');
+      const views = Number(row.page_views || 0);
+      const success = Number(row.form_submit_success || 0);
+      const selected = row.metric_date === selectedAnalyticsDate ? 'selected' : '';
+      return `<option value="${day}" ${selected}>${day} | Views: ${views} | Success: ${success}</option>`;
+    }));
+    historySelect.innerHTML = options.join('');
+  }
 
   const statusList = document.getElementById('statusBreakdownList');
   const statusRows = Array.isArray(data.leadStatus) ? data.leadStatus : [];
   statusList.innerHTML = statusRows.length === 0
     ? '<li>No lead status data yet.</li>'
     : statusRows.map((row) => `<li>${escapeHtml(row.status)}: ${Number(row.count || 0)}</li>`).join('');
+
+  setStatus('dashboardStatus', `Usage loaded for ${selectedAnalyticsDate}.`);
 }
 
 async function viewLeadDetail(leadId) {
@@ -296,7 +349,7 @@ function openLeadDetailModal(lead) {
   const content = document.getElementById('leadDetailContent');
   if (!modal || !content) return;
 
-  content.textContent = JSON.stringify(lead, null, 2);
+  content.innerHTML = renderLeadDetailHtml(lead);
   modal.classList.add('is-visible');
   modal.setAttribute('aria-hidden', 'false');
 }
@@ -306,6 +359,78 @@ function closeLeadDetailModal() {
   if (!modal) return;
   modal.classList.remove('is-visible');
   modal.setAttribute('aria-hidden', 'true');
+}
+
+function renderLeadDetailHtml(lead) {
+  const scheduleValue = formatScheduleValue(lead.schedule_json, lead.schedule_other);
+  const referralValue = [lead.referral_source, lead.referral_other].filter(Boolean).join(' | ');
+
+  return [
+    renderDetailSection('Contact Information', [
+      ['Name', `${safeText(lead.first_name)} ${safeText(lead.last_name)}`.trim() || '-'],
+      ['Email', safeText(lead.email) || '-'],
+      ['Phone', safeText(lead.phone) || '-']
+    ]),
+    renderDetailSection('Spanish Background', [
+      ['Level', safeText(lead.spanish_level) || '-'],
+      ['Experience', safeText(lead.spanish_experience) || '-']
+    ]),
+    renderDetailSection('Availability', [
+      ['Schedule', scheduleValue || '-'],
+      ['Schedule Other', safeText(lead.schedule_other) || '-']
+    ]),
+    renderDetailSection('Referral & Notes', [
+      ['Referral Source', safeText(referralValue) || '-'],
+      ['Comments', safeText(lead.comments) || '-'],
+      ['Admin Notes', safeText(lead.admin_notes) || '-']
+    ]),
+    renderDetailSection('Submission Metadata', [
+      ['Date Submitted', formatDate(lead.created_at)],
+      ['Status', safeText(lead.status) || '-'],
+      ['Assigned To', safeText(lead.assigned_to) || '-'],
+      ['Last Contacted', formatDate(lead.last_contacted_at)],
+      ['UTM Source', safeText(lead.utm_source) || '-'],
+      ['UTM Medium', safeText(lead.utm_medium) || '-'],
+      ['UTM Campaign', safeText(lead.utm_campaign) || '-'],
+      ['IP Address', safeText(lead.ip_address) || '-']
+    ])
+  ].join('');
+}
+
+function renderDetailSection(title, fields) {
+  const items = fields.map(([label, value]) => {
+    return `<div class="detail-field"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`;
+  }).join('');
+
+  return `<section class="detail-section"><h4>${escapeHtml(title)}</h4><div class="detail-grid">${items}</div></section>`;
+}
+
+function formatScheduleValue(scheduleJson, scheduleOther) {
+  let parsedSchedule = [];
+  if (typeof scheduleJson === 'string' && scheduleJson.trim()) {
+    try {
+      const parsed = JSON.parse(scheduleJson);
+      if (Array.isArray(parsed)) parsedSchedule = parsed;
+    } catch (_error) {
+      parsedSchedule = [scheduleJson];
+    }
+  }
+
+  const values = parsedSchedule.map((item) => safeText(item)).filter(Boolean);
+  if (scheduleOther) {
+    values.push(`Other: ${safeText(scheduleOther)}`);
+  }
+  return values.join(', ');
+}
+
+function safeText(value) {
+  return String(value || '').trim();
+}
+
+function getLocalDateIso() {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
 }
 
 function formatDate(value) {

@@ -43,7 +43,11 @@ function trackEvent(eventName, metadata = {}, eventCategory = 'site') {
     eventName,
     eventCategory,
     page: window.location.pathname,
-    metadata
+    metadata: {
+      ...metadata,
+      localDate: getLocalDateIso(),
+      timezoneOffsetMinutes: new Date().getTimezoneOffset()
+    }
   });
 
   if (!analyticsFlushTimer) {
@@ -51,7 +55,7 @@ function trackEvent(eventName, metadata = {}, eventCategory = 'site') {
   }
 }
 
-function flushAnalytics() {
+async function flushAnalytics() {
   if (analyticsQueue.length === 0) {
     analyticsFlushTimer = null;
     return;
@@ -64,23 +68,25 @@ function flushAnalytics() {
     const blob = new Blob([payload], { type: 'application/json' });
     const sent = navigator.sendBeacon(ANALYTICS_ENDPOINT, blob);
     if (!sent) {
-      fetch(ANALYTICS_ENDPOINT, {
+      await fetch(ANALYTICS_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload,
         keepalive: true
-      }).catch(() => {
+      }).catch((error) => {
         analyticsQueue = batch.concat(analyticsQueue);
+        console.warn('[Analytics] Fallback send failed.', error);
       });
     }
   } else {
-    fetch(ANALYTICS_ENDPOINT, {
+    await fetch(ANALYTICS_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: payload,
       keepalive: true
-    }).catch(() => {
+    }).catch((error) => {
       analyticsQueue = batch.concat(analyticsQueue);
+      console.warn('[Analytics] Send failed.', error);
     });
   }
 
@@ -336,6 +342,7 @@ if (contactForm) {
       referralSource,
       hasScheduleSelection: schedule.length > 0
     }, 'funnel');
+    await flushAnalytics();
 
     // Show loading state
     const submitButton = contactForm.querySelector('button[type="submit"]');
@@ -357,6 +364,7 @@ if (contactForm) {
 
       if (response.ok) {
         trackEvent('form_submit_success', { leadSource: referralSource }, 'funnel');
+        await flushAnalytics();
         // Success
         showFormStatus('✓ Thank you! We received your message and will contact you soon.', 'success');
         contactForm.reset();
@@ -374,6 +382,7 @@ if (contactForm) {
         }, 3000);
       } else {
         trackEvent('form_submit_fail', { reason: result.error || 'unknown' }, 'funnel');
+        await flushAnalytics();
         // Error response from server
         showFormStatus(result.error || 'An error occurred. Please try again.', 'error');
         submitButton.textContent = originalText;
@@ -382,6 +391,7 @@ if (contactForm) {
     } catch (error) {
       console.error('Form submission error:', error);
       trackEvent('form_submit_fail', { reason: 'network_error' }, 'funnel');
+      await flushAnalytics();
       showFormStatus('Network error. Please check your connection and try again.', 'error');
       submitButton.textContent = originalText;
       submitButton.disabled = false;
@@ -399,6 +409,12 @@ function showFormStatus(message, type) {
 
   // Scroll to message
   formStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function getLocalDateIso() {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
 }
 
 // ============================================

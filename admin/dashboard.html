@@ -4,13 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>District Spanish Admin Dashboard</title>
+  <link rel="icon" type="image/png" href="../images/logo-tab.png">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body data-page="dashboard">
   <header class="admin-header">
-    <div>
+    <div class="header-brand">
+      <img src="../images/logo.png" alt="District Spanish" class="admin-logo">
+      <div>
       <h1>District Spanish Admin</h1>
       <p>Lead tracking and usage dashboard</p>
+      </div>
     </div>
     <button id="logoutBtn" class="btn-secondary">Log Out</button>
   </header>
@@ -18,21 +22,25 @@
   <main class="admin-main">
     <section class="panel">
       <h2>Page Usage Dashboard</h2>
+      <div class="analytics-controls">
+        <label for="analyticsDate" class="date-label">Selected day</label>
+        <input id="analyticsDate" type="date">
+        <select id="analyticsHistorySelect" aria-label="Recent active days">
+          <option value="">Recent active days</option>
+        </select>
+        <button id="analyticsTodayBtn" class="btn-secondary">Today</button>
+      </div>
       <div class="metric-grid" id="metricsGrid">
         <article class="metric-card">
-          <h3>Page Views (24h)</h3>
+          <h3>Page Views</h3>
           <p id="metricPageViews">0</p>
         </article>
         <article class="metric-card">
-          <h3>CTA Clicks (24h)</h3>
+          <h3>CTA Clicks</h3>
           <p id="metricCtaClicks">0</p>
         </article>
         <article class="metric-card">
-          <h3>Submit Attempts (24h)</h3>
-          <p id="metricSubmitAttempts">0</p>
-        </article>
-        <article class="metric-card">
-          <h3>Submit Success (24h)</h3>
+          <h3>Submit Success</h3>
           <p id="metricSubmitSuccess">0</p>
         </article>
       </div>
@@ -94,7 +102,7 @@
         <h3 id="leadDetailTitle">Lead Details</h3>
         <button id="closeLeadDetailModal" class="btn-secondary">Close</button>
       </div>
-      <pre id="leadDetailContent" class="detail-json">Loading...</pre>
+      <div id="leadDetailContent" class="detail-content">Loading...</div>
     </div>
   </div>
 

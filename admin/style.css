@@ -39,6 +39,25 @@ body {
   box-shadow: 0 14px 35px rgba(30, 98, 148, 0.15);
 }
 
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.auth-brand h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--deep);
+}
+
+.auth-brand p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .auth-form {
   display: grid;
   gap: 10px;
@@ -106,6 +125,22 @@ textarea {
   box-shadow: 0 10px 24px rgba(15, 57, 88, 0.28);
 }
 
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #fff;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
 .admin-main {
   padding: 18px;
   display: grid;
@@ -123,7 +158,28 @@ textarea {
 .metric-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.analytics-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.analytics-controls input,
+.analytics-controls select {
+  width: auto;
+  min-width: 170px;
+  background: #fff;
+}
+
+.date-label {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .metric-card {
@@ -232,15 +288,51 @@ td {
   background: #f8fbff;
 }
 
-.detail-json {
+.detail-content {
   margin: 0;
   padding: 16px;
   max-height: calc(86vh - 68px);
   overflow: auto;
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 13px;
-  line-height: 1.45;
   background: #fff;
+}
+
+.detail-section {
+  border: 1px solid #e3eaf4;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fbfdff;
+}
+
+.detail-section h4 {
+  margin: 0 0 8px;
+  color: var(--deep);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.detail-field {
+  border-top: 1px dashed #d8e2ef;
+  padding-top: 6px;
+}
+
+.detail-field strong {
+  color: #3f536c;
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.detail-field span {
+  color: #25384d;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 @media (max-width: 768px) {
@@ -266,6 +358,17 @@ td {
     grid-template-columns: 1fr;
   }
 
+  .analytics-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .analytics-controls input,
+  .analytics-controls select,
+  .analytics-controls button {
+    width: 100%;
+  }
+
   .admin-header {
     flex-direction: column;
     align-items: flex-start;
@@ -284,6 +387,10 @@ td {
 
   .metric-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
   }
 
   .metric-card p {
@@ -364,9 +471,6 @@ td {
     max-height: 92vh;
   }
 
-  .detail-json {
-    font-size: 12px;
-  }
 }
 
 @media (max-width: 520px) {

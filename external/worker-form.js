@@ -70,6 +70,10 @@ export default {
         return await handleAnalyticsSummary(request, env);
       }
 
+      if (path === '/admin/analytics/debug' && request.method === 'GET') {
+        return await handleAnalyticsDebug(request, env);
+      }
+
       return jsonResponse({ error: 'Not found' }, 404, env);
     } catch (error) {
       console.error('Worker error:', error);
@@ -191,7 +195,11 @@ async function handleAnalyticsEvents(request, env) {
 
   const ipAddress = request.headers.get('CF-Connecting-IP') || null;
   const userAgent = request.headers.get('User-Agent') || null;
-  const metricDate = new Date().toISOString().slice(0, 10);
+  const metricDate = resolveMetricDate(events);
+
+  let inserted = 0;
+  let rolledUp = 0;
+  let skipped = 0;
 
   await db.prepare(`
     INSERT INTO daily_metrics (metric_date)
@@ -202,7 +210,16 @@ async function handleAnalyticsEvents(request, env) {
   for (const event of events) {
     const sessionId = safeString(event.sessionId) || `anon_${crypto.randomUUID()}`;
     const eventName = safeString(event.eventName);
-    if (!eventName) continue;
+    if (!eventName) {
+      skipped += 1;
+      continue;
+    }
+
+    const eventCategory = safeString(event.eventCategory) || 'site';
+    const sourcePage = safeString(event.page) || '/';
+    const metadata = event && typeof event.metadata === 'object' && event.metadata !== null
+      ? event.metadata
+      : {};
 
     await db.prepare(`
       INSERT INTO analytics_events (
@@ -217,12 +234,13 @@ async function handleAnalyticsEvents(request, env) {
     `).bind(
       sessionId,
       eventName,
-      safeString(event.eventCategory),
-      safeString(event.page),
-      JSON.stringify(event.metadata || {}),
+      eventCategory,
+      sourcePage,
+      JSON.stringify(metadata),
       ipAddress,
       userAgent
     ).run();
+    inserted += 1;
 
     const metricColumn = DAILY_EVENT_COLUMN_MAP[eventName];
     if (metricColumn) {
@@ -232,10 +250,18 @@ async function handleAnalyticsEvents(request, env) {
             updated_at = datetime('now')
         WHERE metric_date = ?
       `).bind(metricDate).run();
+      rolledUp += 1;
     }
   }
 
-  return jsonResponse({ success: true, accepted: events.length }, 200, env);
+  return jsonResponse({
+    success: true,
+    accepted: events.length,
+    inserted,
+    rolledUp,
+    skipped,
+    metricDate
+  }, 200, env);
 }
 
 async function handleAdminLogin(request, env) {
@@ -468,13 +494,33 @@ async function handleAnalyticsSummary(request, env) {
   if (!session.ok) return session.response;
 
   const db = requireDb(env);
+  const url = new URL(request.url);
+  const rawDate = safeString(url.searchParams.get('date'));
+  const selectedDate = isValidMetricDate(rawDate)
+    ? rawDate
+    : new Date().toISOString().slice(0, 10);
 
-  const todayMetrics = await db.prepare(`
+  const dailyMetricsRow = await db.prepare(`
     SELECT *
     FROM daily_metrics
-    WHERE metric_date = date('now')
+    WHERE metric_date = ?
     LIMIT 1
-  `).first();
+  `).bind(selectedDate).first();
+
+  const dailyFallbackFromEvents = await db.prepare(`
+    SELECT
+      ? AS metric_date,
+      SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END) AS page_views,
+      SUM(CASE WHEN event_name = 'cta_click' THEN 1 ELSE 0 END) AS cta_clicks,
+      SUM(CASE WHEN event_name = 'form_open' THEN 1 ELSE 0 END) AS form_opens,
+      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
+      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
+      SUM(CASE WHEN event_name = 'form_submit_fail' THEN 1 ELSE 0 END) AS form_submit_fail
+    FROM analytics_events
+    WHERE date(created_at) = ?
+  `).bind(selectedDate, selectedDate).first();
+
+  const daily = mergeDailyMetrics(selectedDate, dailyMetricsRow, dailyFallbackFromEvents);
 
   const rolling24h = await db.prepare(`
     SELECT
@@ -507,16 +553,25 @@ async function handleAnalyticsSummary(request, env) {
     ORDER BY count DESC
   `).all();
 
+  const dailyHistoryRows = await db.prepare(`
+    SELECT
+      date(created_at) AS metric_date,
+      SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END) AS page_views,
+      SUM(CASE WHEN event_name = 'cta_click' THEN 1 ELSE 0 END) AS cta_clicks,
+      SUM(CASE WHEN event_name = 'form_open' THEN 1 ELSE 0 END) AS form_opens,
+      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
+      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
+      SUM(CASE WHEN event_name = 'form_submit_fail' THEN 1 ELSE 0 END) AS form_submit_fail
+    FROM analytics_events
+    GROUP BY date(created_at)
+    ORDER BY metric_date DESC
+    LIMIT 30
+  `).all();
+
   return jsonResponse({
-    today: todayMetrics || {
-      metric_date: new Date().toISOString().slice(0, 10),
-      page_views: 0,
-      cta_clicks: 0,
-      form_opens: 0,
-      form_submit_attempts: 0,
-      form_submit_success: 0,
-      form_submit_fail: 0
-    },
+    selectedDate,
+    daily,
+    today: daily,
     rolling24h: {
       page_views: Number(rolling24h?.page_views || 0),
       cta_clicks: Number(rolling24h?.cta_clicks || 0),
@@ -533,7 +588,43 @@ async function handleAnalyticsSummary(request, env) {
       form_submit_success: Number(rolling7d?.form_submit_success || 0),
       form_submit_fail: Number(rolling7d?.form_submit_fail || 0)
     },
+    dailyHistory: normalizeDailyRows(dailyHistoryRows.results || []),
     leadStatus: statusRows.results || []
+  }, 200, env);
+}
+
+async function handleAnalyticsDebug(request, env) {
+  const session = await requireAdminSession(request, env);
+  if (!session.ok) return session.response;
+
+  const db = requireDb(env);
+
+  const recentEvents = await db.prepare(`
+    SELECT id, event_name, event_category, source_page, created_at
+    FROM analytics_events
+    ORDER BY created_at DESC
+    LIMIT 20
+  `).all();
+
+  const recentDailyMetrics = await db.prepare(`
+    SELECT *
+    FROM daily_metrics
+    ORDER BY metric_date DESC
+    LIMIT 14
+  `).all();
+
+  const eventDates = await db.prepare(`
+    SELECT date(created_at) AS metric_date, COUNT(*) AS events
+    FROM analytics_events
+    GROUP BY date(created_at)
+    ORDER BY metric_date DESC
+    LIMIT 14
+  `).all();
+
+  return jsonResponse({
+    recentEvents: recentEvents.results || [],
+    recentDailyMetrics: recentDailyMetrics.results || [],
+    eventDates: eventDates.results || []
   }, 200, env);
 }
 
@@ -623,6 +714,49 @@ async function requireAdminSession(request, env) {
 function safeString(value) {
   if (value === undefined || value === null) return null;
   return String(value).trim();
+}
+
+function isValidMetricDate(value) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function resolveMetricDate(events) {
+  for (const event of events) {
+    const directDate = safeString(event?.metricDate);
+    if (isValidMetricDate(directDate)) return directDate;
+
+    const metadataDate = safeString(event?.metadata?.localDate);
+    if (isValidMetricDate(metadataDate)) return metadataDate;
+  }
+
+  return new Date().toISOString().slice(0, 10);
+}
+
+function mergeDailyMetrics(selectedDate, dailyMetricsRow, fallbackRow) {
+  const primary = dailyMetricsRow || fallbackRow || {};
+  return {
+    metric_date: selectedDate,
+    page_views: Number(primary.page_views || 0),
+    cta_clicks: Number(primary.cta_clicks || 0),
+    form_opens: Number(primary.form_opens || 0),
+    form_submit_attempts: Number(primary.form_submit_attempts || 0),
+    form_submit_success: Number(primary.form_submit_success || 0),
+    form_submit_fail: Number(primary.form_submit_fail || 0)
+  };
+}
+
+function normalizeDailyRows(rows) {
+  return rows.map((row) => ({
+    metric_date: row.metric_date,
+    page_views: Number(row.page_views || 0),
+    cta_clicks: Number(row.cta_clicks || 0),
+    form_opens: Number(row.form_opens || 0),
+    form_submit_attempts: Number(row.form_submit_attempts || 0),
+    form_submit_success: Number(row.form_submit_success || 0),
+    form_submit_fail: Number(row.form_submit_fail || 0)
+  }));
 }
 
 async function verifyPassword(password, storedHash) {
