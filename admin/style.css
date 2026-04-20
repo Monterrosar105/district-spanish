@@ -221,7 +221,7 @@ textarea {
 
 .toolbar {
   display: grid;
-  grid-template-columns: 2fr 1fr auto;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -246,6 +246,24 @@ thead th {
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+.sort-btn {
+  border: none;
+  background: transparent;
+  color: #2a4159;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sort-btn:hover {
+  color: var(--primary);
+}
+
+.sort-btn.is-active {
+  color: var(--deep);
 }
 
 th,

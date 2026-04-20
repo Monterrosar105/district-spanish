@@ -12,11 +12,6 @@ const navLinks = document.querySelectorAll('.nav-link');
 
 const WORKER_BASE_URL = 'https://district-spanish-form.robmonterrosa105.workers.dev';
 const FORM_ENDPOINT = `${WORKER_BASE_URL}/form`;
-const ANALYTICS_ENDPOINT = `${WORKER_BASE_URL}/analytics/events`;
-
-let analyticsQueue = [];
-let analyticsFlushTimer = null;
-let analyticsInterval = null;
 
 function getSessionId() {
   const key = 'districtSpanishSessionId';
@@ -36,73 +31,6 @@ function getUtmParams() {
     utmCampaign: params.get('utm_campaign') || ''
   };
 }
-
-function trackEvent(eventName, metadata = {}, eventCategory = 'site') {
-  analyticsQueue.push({
-    sessionId: getSessionId(),
-    eventName,
-    eventCategory,
-    page: window.location.pathname,
-    metadata: {
-      ...metadata,
-      localDate: getLocalDateIso(),
-      timezoneOffsetMinutes: new Date().getTimezoneOffset()
-    }
-  });
-
-  if (!analyticsFlushTimer) {
-    analyticsFlushTimer = window.setTimeout(flushAnalytics, 1500);
-  }
-}
-
-async function flushAnalytics() {
-  if (analyticsQueue.length === 0) {
-    analyticsFlushTimer = null;
-    return;
-  }
-
-  const batch = analyticsQueue.splice(0, analyticsQueue.length);
-  const payload = JSON.stringify({ events: batch });
-
-  if (navigator.sendBeacon) {
-    const blob = new Blob([payload], { type: 'application/json' });
-    const sent = navigator.sendBeacon(ANALYTICS_ENDPOINT, blob);
-    if (!sent) {
-      await fetch(ANALYTICS_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-        keepalive: true
-      }).catch((error) => {
-        analyticsQueue = batch.concat(analyticsQueue);
-        console.warn('[Analytics] Fallback send failed.', error);
-      });
-    }
-  } else {
-    await fetch(ANALYTICS_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload,
-      keepalive: true
-    }).catch((error) => {
-      analyticsQueue = batch.concat(analyticsQueue);
-      console.warn('[Analytics] Send failed.', error);
-    });
-  }
-
-  analyticsFlushTimer = null;
-}
-
-window.addEventListener('beforeunload', flushAnalytics);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') {
-    flushAnalytics();
-  }
-});
-window.addEventListener('load', () => {
-  trackEvent('page_view', { title: document.title }, 'funnel');
-  analyticsInterval = window.setInterval(flushAnalytics, 7000);
-});
 
 // Toggle menu on hamburger click
 hamburger.addEventListener('click', () => {
@@ -189,7 +117,6 @@ const modalOverlay = document.getElementById('modalOverlay');
 
 // Open modal function
 function openModal() {
-  trackEvent('form_open', { source: 'cta-button' }, 'funnel');
   formModal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -197,7 +124,6 @@ function openModal() {
 // Open modal from Contact Info button
 if (openFormModal) {
   openFormModal.addEventListener('click', () => {
-    trackEvent('cta_click', { source: 'contact-section', cta: 'Book FREE Level Assessment' }, 'funnel');
     openModal();
   });
 }
@@ -206,7 +132,6 @@ if (openFormModal) {
 if (navOpenFormModal) {
   navOpenFormModal.addEventListener('click', (e) => {
     e.preventDefault();
-    trackEvent('cta_click', { source: 'navbar', cta: 'Book FREE Level Assessment' }, 'funnel');
     openModal();
   });
 }
@@ -215,7 +140,6 @@ if (navOpenFormModal) {
 if (heroOpenFormModal) {
   heroOpenFormModal.addEventListener('click', (e) => {
     e.preventDefault();
-    trackEvent('cta_click', { source: 'hero', cta: 'Book FREE Level Assessment' }, 'funnel');
     openModal();
   });
 }
@@ -223,7 +147,6 @@ if (heroOpenFormModal) {
 // Open form modal from program modal "Book FREE Level Assessment" buttons
 document.querySelectorAll('.open-form-modal-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    trackEvent('cta_click', { source: 'program-modal', cta: 'Book FREE Level Assessment' }, 'funnel');
     closeProgramModals();
     openModal();
   });
@@ -231,7 +154,6 @@ document.querySelectorAll('.open-form-modal-btn').forEach(btn => {
 
 // Close modal
 function closeModal() {
-  trackEvent('form_close', { source: 'modal-close' }, 'funnel');
   formModal.classList.remove('active');
   document.body.style.overflow = 'auto';
 }
@@ -337,12 +259,6 @@ if (contactForm) {
       sessionId: getSessionId()
     };
 
-    trackEvent('form_submit_attempt', {
-      level,
-      referralSource,
-      hasScheduleSelection: schedule.length > 0
-    }, 'funnel');
-    await flushAnalytics();
 
     // Show loading state
     const submitButton = contactForm.querySelector('button[type="submit"]');
@@ -363,8 +279,6 @@ if (contactForm) {
       const result = await response.json();
 
       if (response.ok) {
-        trackEvent('form_submit_success', { leadSource: referralSource }, 'funnel');
-        await flushAnalytics();
         // Success
         showFormStatus('✓ Thank you! We received your message and will contact you soon.', 'success');
         contactForm.reset();
@@ -381,8 +295,6 @@ if (contactForm) {
           closeModal();
         }, 3000);
       } else {
-        trackEvent('form_submit_fail', { reason: result.error || 'unknown' }, 'funnel');
-        await flushAnalytics();
         // Error response from server
         showFormStatus(result.error || 'An error occurred. Please try again.', 'error');
         submitButton.textContent = originalText;
@@ -390,8 +302,6 @@ if (contactForm) {
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      trackEvent('form_submit_fail', { reason: 'network_error' }, 'funnel');
-      await flushAnalytics();
       showFormStatus('Network error. Please check your connection and try again.', 'error');
       submitButton.textContent = originalText;
       submitButton.disabled = false;
@@ -411,11 +321,6 @@ function showFormStatus(message, type) {
   formStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function getLocalDateIso() {
-  const now = new Date();
-  const offsetMs = now.getTimezoneOffset() * 60000;
-  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
-}
 
 // ============================================
 // SCROLL ANIMATIONS (Fade-in on scroll)

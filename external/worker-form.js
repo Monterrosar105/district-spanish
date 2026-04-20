@@ -20,6 +20,8 @@ const DAILY_EVENT_COLUMN_MAP = {
   form_submit_fail: 'form_submit_fail'
 };
 
+let analyticsEventDateColumnCache = null;
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -196,6 +198,7 @@ async function handleAnalyticsEvents(request, env) {
   const ipAddress = request.headers.get('CF-Connecting-IP') || null;
   const userAgent = request.headers.get('User-Agent') || null;
   const metricDate = resolveMetricDate(events);
+  const hasEventDateColumn = await analyticsEventsHasEventDateColumn(db);
 
   let inserted = 0;
   let rolledUp = 0;
@@ -226,27 +229,49 @@ async function handleAnalyticsEvents(request, env) {
       ? safeString(metadata.localDate)
       : metricDate;
 
-    await db.prepare(`
-      INSERT INTO analytics_events (
-        session_id,
-        event_name,
-        event_category,
-        source_page,
-        metadata_json,
-        ip_address,
-        user_agent,
-        event_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      sessionId,
-      eventName,
-      eventCategory,
-      sourcePage,
-      JSON.stringify(metadata),
-      ipAddress,
-      userAgent,
-      eventDate
-    ).run();
+    if (hasEventDateColumn) {
+      await db.prepare(`
+        INSERT INTO analytics_events (
+          session_id,
+          event_name,
+          event_category,
+          source_page,
+          metadata_json,
+          ip_address,
+          user_agent,
+          event_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        sessionId,
+        eventName,
+        eventCategory,
+        sourcePage,
+        JSON.stringify(metadata),
+        ipAddress,
+        userAgent,
+        eventDate
+      ).run();
+    } else {
+      await db.prepare(`
+        INSERT INTO analytics_events (
+          session_id,
+          event_name,
+          event_category,
+          source_page,
+          metadata_json,
+          ip_address,
+          user_agent
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        sessionId,
+        eventName,
+        eventCategory,
+        sourcePage,
+        JSON.stringify(metadata),
+        ipAddress,
+        userAgent
+      ).run();
+    }
     inserted += 1;
 
     const metricColumn = DAILY_EVENT_COLUMN_MAP[eventName];
@@ -365,10 +390,25 @@ async function handleAdminLeads(request, env) {
   const db = requireDb(env);
   const url = new URL(request.url);
   const status = safeString(url.searchParams.get('status'));
+  const level = safeString(url.searchParams.get('level'));
+  const fromDate = safeString(url.searchParams.get('fromDate'));
+  const toDate = safeString(url.searchParams.get('toDate'));
   const query = safeString(url.searchParams.get('q'));
+  const sortByRaw = safeString(url.searchParams.get('sortBy')) || 'created_at';
+  const sortDirRaw = (safeString(url.searchParams.get('sortDir')) || 'desc').toLowerCase();
   const page = Math.max(1, Number(url.searchParams.get('page') || 1));
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') || 25)));
   const offset = (page - 1) * limit;
+
+  const allowedSortBy = new Set(['created_at', 'first_name', 'last_name', 'email', 'phone', 'spanish_level', 'name']);
+  const sortBy = allowedSortBy.has(sortByRaw) ? sortByRaw : 'created_at';
+  const sortDir = sortDirRaw === 'asc' ? 'ASC' : 'DESC';
+  let orderByClause = 'created_at DESC';
+  if (sortBy === 'name') {
+    orderByClause = `last_name ${sortDir}, first_name ${sortDir}`;
+  } else {
+    orderByClause = `${sortBy} ${sortDir}`;
+  }
 
   const where = [];
   const params = [];
@@ -376,6 +416,21 @@ async function handleAdminLeads(request, env) {
   if (status) {
     where.push('status = ?');
     params.push(status);
+  }
+
+  if (level) {
+    where.push('spanish_level = ?');
+    params.push(level);
+  }
+
+  if (isValidMetricDate(fromDate)) {
+    where.push('date(created_at) >= ?');
+    params.push(fromDate);
+  }
+
+  if (isValidMetricDate(toDate)) {
+    where.push('date(created_at) <= ?');
+    params.push(toDate);
   }
 
   if (query) {
@@ -403,7 +458,7 @@ async function handleAdminLeads(request, env) {
       updated_at
     FROM leads
     ${whereClause}
-    ORDER BY created_at DESC
+    ORDER BY ${orderByClause}
     LIMIT ? OFFSET ?
   `).bind(...params, limit, offset).all();
 
@@ -413,13 +468,38 @@ async function handleAdminLeads(request, env) {
     ${whereClause}
   `).bind(...params).first();
 
+  const summaryResult = await db.prepare(`
+    SELECT
+      COUNT(*) AS total_leads,
+      SUM(CASE WHEN date(created_at) = date('now') THEN 1 ELSE 0 END) AS leads_today,
+      SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new_leads,
+      SUM(CASE WHEN status = 'enrolled' THEN 1 ELSE 0 END) AS enrolled_leads
+    FROM leads
+    ${whereClause}
+  `).bind(...params).first();
+
+  const statusBreakdown = await db.prepare(`
+    SELECT status, COUNT(*) AS count
+    FROM leads
+    ${whereClause}
+    GROUP BY status
+    ORDER BY count DESC
+  `).bind(...params).all();
+
   return jsonResponse({
     leads: leadsResult.results || [],
     pagination: {
       page,
       limit,
       total: Number(countResult?.count || 0)
-    }
+    },
+    summary: {
+      totalLeads: Number(summaryResult?.total_leads || 0),
+      leadsToday: Number(summaryResult?.leads_today || 0),
+      newLeads: Number(summaryResult?.new_leads || 0),
+      enrolledLeads: Number(summaryResult?.enrolled_leads || 0)
+    },
+    statusBreakdown: statusBreakdown.results || []
   }, 200, env);
 }
 
@@ -506,6 +586,10 @@ async function handleAnalyticsSummary(request, env) {
   const selectedDate = isValidMetricDate(rawDate)
     ? rawDate
     : new Date().toISOString().slice(0, 10);
+  const hasEventDateColumn = await analyticsEventsHasEventDateColumn(db);
+  const dateExpr = hasEventDateColumn
+    ? "COALESCE(event_date, json_extract(metadata_json, '$.localDate'), date(created_at))"
+    : "COALESCE(json_extract(metadata_json, '$.localDate'), date(created_at))";
 
   // Single source of truth: query analytics_events directly.
   // COALESCE(event_date, date(created_at)) handles rows written before
@@ -519,7 +603,7 @@ async function handleAnalyticsSummary(request, env) {
       SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
       SUM(CASE WHEN event_name = 'form_submit_fail'    THEN 1 ELSE 0 END) AS form_submit_fail
     FROM analytics_events
-    WHERE COALESCE(event_date, date(created_at)) = ?
+    WHERE ${dateExpr} = ?
   `).bind(selectedDate).first();
 
   const daily = {
@@ -541,7 +625,7 @@ async function handleAnalyticsSummary(request, env) {
 
   const dailyHistoryRows = await db.prepare(`
     SELECT
-      COALESCE(event_date, date(created_at))                                 AS metric_date,
+      ${dateExpr}                                                             AS metric_date,
       SUM(CASE WHEN event_name = 'page_view'           THEN 1 ELSE 0 END)   AS page_views,
       SUM(CASE WHEN event_name = 'cta_click'           THEN 1 ELSE 0 END)   AS cta_clicks,
       SUM(CASE WHEN event_name = 'form_open'           THEN 1 ELSE 0 END)   AS form_opens,
@@ -549,7 +633,7 @@ async function handleAnalyticsSummary(request, env) {
       SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END)   AS form_submit_success,
       SUM(CASE WHEN event_name = 'form_submit_fail'    THEN 1 ELSE 0 END)   AS form_submit_fail
     FROM analytics_events
-    GROUP BY COALESCE(event_date, date(created_at))
+    GROUP BY ${dateExpr}
     ORDER BY metric_date DESC
     LIMIT 30
   `).all();
@@ -568,22 +652,33 @@ async function handleAnalyticsDebug(request, env) {
   if (!session.ok) return session.response;
 
   const db = requireDb(env);
+  const hasEventDateColumn = await analyticsEventsHasEventDateColumn(db);
+  const dateExpr = hasEventDateColumn
+    ? "COALESCE(event_date, json_extract(metadata_json, '$.localDate'), date(created_at))"
+    : "COALESCE(json_extract(metadata_json, '$.localDate'), date(created_at))";
 
-  const recentEvents = await db.prepare(`
-    SELECT id, event_name, event_category, source_page, event_date, created_at
-    FROM analytics_events
-    ORDER BY created_at DESC
-    LIMIT 20
-  `).all();
+  const recentEvents = hasEventDateColumn
+    ? await db.prepare(`
+      SELECT id, event_name, event_category, source_page, event_date, created_at
+      FROM analytics_events
+      ORDER BY created_at DESC
+      LIMIT 20
+    `).all()
+    : await db.prepare(`
+      SELECT id, event_name, event_category, source_page, NULL AS event_date, created_at
+      FROM analytics_events
+      ORDER BY created_at DESC
+      LIMIT 20
+    `).all();
 
   const eventDateSummary = await db.prepare(`
     SELECT
-      COALESCE(event_date, date(created_at)) AS event_date,
+      ${dateExpr} AS event_date,
       COUNT(*) AS total_events,
       SUM(CASE WHEN event_name = 'page_view'           THEN 1 ELSE 0 END) AS page_views,
       SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success
     FROM analytics_events
-    GROUP BY COALESCE(event_date, date(created_at))
+    GROUP BY ${dateExpr}
     ORDER BY event_date DESC
     LIMIT 14
   `).all();
@@ -710,6 +805,26 @@ function normalizeDailyRows(rows) {
     form_submit_success: Number(row.form_submit_success || 0),
     form_submit_fail: Number(row.form_submit_fail || 0)
   }));
+}
+
+async function analyticsEventsHasEventDateColumn(db) {
+  if (typeof analyticsEventDateColumnCache === 'boolean') {
+    return analyticsEventDateColumnCache;
+  }
+
+  try {
+    const tableInfo = await db.prepare(`
+      PRAGMA table_info('analytics_events')
+    `).all();
+
+    analyticsEventDateColumnCache = Boolean(
+      (tableInfo.results || []).some((column) => safeString(column.name) === 'event_date')
+    );
+  } catch (_error) {
+    analyticsEventDateColumnCache = false;
+  }
+
+  return analyticsEventDateColumnCache;
 }
 
 async function verifyPassword(password, storedHash) {

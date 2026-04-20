@@ -79,7 +79,7 @@ async function initDashboardPage() {
   if (!isAuthed) return;
 
   wireDashboardEvents();
-  await Promise.all([loadAnalyticsSummary(), loadLeads()]);
+  await loadLeads();
 }
 
 async function ensureAuthenticated() {
@@ -102,47 +102,20 @@ async function ensureAuthenticated() {
 let currentPage = 1;
 let currentQuery = '';
 let currentStatus = '';
+let currentLevel = '';
+let currentFromDate = '';
+let currentToDate = '';
+let currentSortBy = 'created_at';
+let currentSortDir = 'desc';
 let currentTotal = 0;
 const pageSize = 20;
-let selectedAnalyticsDate = getLocalDateIso();
 
 function wireDashboardEvents() {
-  const analyticsDateInput = document.getElementById('analyticsDate');
-  const analyticsTodayBtn = document.getElementById('analyticsTodayBtn');
-  const analyticsHistorySelect = document.getElementById('analyticsHistorySelect');
-
-  if (analyticsDateInput) {
-    const today = getLocalDateIso();
-    analyticsDateInput.max = today;
-    analyticsDateInput.value = selectedAnalyticsDate;
-    analyticsDateInput.addEventListener('change', async () => {
-      if (!analyticsDateInput.value) return;
-      selectedAnalyticsDate = analyticsDateInput.value;
-      await loadAnalyticsSummary();
-    });
-  }
-
-  if (analyticsTodayBtn) {
-    analyticsTodayBtn.addEventListener('click', async () => {
-      selectedAnalyticsDate = getLocalDateIso();
-      if (analyticsDateInput) {
-        analyticsDateInput.value = selectedAnalyticsDate;
-      }
-      await loadAnalyticsSummary();
-    });
-  }
-
-  if (analyticsHistorySelect) {
-    analyticsHistorySelect.addEventListener('change', async (event) => {
-      const selected = event.target.value;
-      if (!selected) return;
-      selectedAnalyticsDate = selected;
-      if (analyticsDateInput) {
-        analyticsDateInput.value = selected;
-      }
-      await loadAnalyticsSummary();
-    });
-  }
+  const fromDateInput = document.getElementById('fromDateFilter');
+  const toDateInput = document.getElementById('toDateFilter');
+  const today = getLocalDateIso();
+  if (fromDateInput) fromDateInput.max = today;
+  if (toDateInput) toDateInput.max = today;
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await apiFetch('/admin/logout', { method: 'POST' });
@@ -151,7 +124,7 @@ function wireDashboardEvents() {
   });
 
   document.getElementById('refreshBtn').addEventListener('click', async () => {
-    await Promise.all([loadLeads(), loadAnalyticsSummary()]);
+    await loadLeads();
   });
 
   document.getElementById('searchInput').addEventListener('input', async (event) => {
@@ -165,6 +138,44 @@ function wireDashboardEvents() {
     currentPage = 1;
     await loadLeads();
   });
+
+  document.getElementById('levelFilter').addEventListener('change', async (event) => {
+    currentLevel = event.target.value;
+    currentPage = 1;
+    await loadLeads();
+  });
+
+  document.getElementById('fromDateFilter').addEventListener('change', async (event) => {
+    currentFromDate = event.target.value;
+    currentPage = 1;
+    await loadLeads();
+  });
+
+  document.getElementById('toDateFilter').addEventListener('change', async (event) => {
+    currentToDate = event.target.value;
+    currentPage = 1;
+    await loadLeads();
+  });
+
+  document.querySelectorAll('.sort-btn').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const sortBy = String(button.dataset.sort || '').trim();
+      if (!sortBy) return;
+
+      if (currentSortBy === sortBy) {
+        currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortBy = sortBy;
+        currentSortDir = sortBy === 'created_at' ? 'desc' : 'asc';
+      }
+
+      updateSortButtons();
+      currentPage = 1;
+      await loadLeads();
+    });
+  });
+
+  updateSortButtons();
 
   document.getElementById('prevPageBtn').addEventListener('click', async () => {
     if (currentPage > 1) {
@@ -201,11 +212,16 @@ async function loadLeads() {
   setStatus('dashboardStatus', 'Loading leads...');
   const params = new URLSearchParams({
     page: String(currentPage),
-    limit: String(pageSize)
+    limit: String(pageSize),
+    sortBy: currentSortBy,
+    sortDir: currentSortDir
   });
 
   if (currentQuery) params.set('q', currentQuery);
   if (currentStatus) params.set('status', currentStatus);
+  if (currentLevel) params.set('level', currentLevel);
+  if (currentFromDate) params.set('fromDate', currentFromDate);
+  if (currentToDate) params.set('toDate', currentToDate);
 
   const { response, data } = await apiFetch(`/admin/leads?${params.toString()}`);
   if (!response.ok) {
@@ -215,6 +231,8 @@ async function loadLeads() {
 
   currentTotal = Number(data.pagination?.total || 0);
   renderLeadsTable(Array.isArray(data.leads) ? data.leads : []);
+  renderLeadSummary(data.summary || {});
+  renderStatusBreakdown(Array.isArray(data.statusBreakdown) ? data.statusBreakdown : []);
   document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${Math.max(1, Math.ceil(currentTotal / pageSize))}`;
   setStatus('dashboardStatus', `Loaded ${data.leads.length} lead(s).`);
 }
@@ -241,7 +259,6 @@ function renderLeadsTable(leads) {
             ${statusOptionsMarkup(lead.status)}
           </select>
         </td>
-        <td data-label="Assigned To"><input data-role="assigned" data-id="${lead.id}" value="${escapeHtml(lead.assigned_to || '')}" /></td>
         <td data-label="Admin Notes"><textarea data-role="notes" data-id="${lead.id}" rows="2"></textarea></td>
         <td data-label="Actions">
           <div class="actions">
@@ -272,12 +289,10 @@ function statusOptionsMarkup(currentValue) {
 
 async function updateLeadRow(leadId) {
   const statusInput = document.querySelector(`select[data-role="status"][data-id="${leadId}"]`);
-  const assignedInput = document.querySelector(`input[data-role="assigned"][data-id="${leadId}"]`);
   const notesInput = document.querySelector(`textarea[data-role="notes"][data-id="${leadId}"]`);
 
   const payload = {
     status: statusInput.value,
-    assignedTo: assignedInput.value.trim(),
     adminNotes: notesInput.value.trim(),
     lastContactedAt: new Date().toISOString()
   };
@@ -293,42 +308,37 @@ async function updateLeadRow(leadId) {
   }
 
   setStatus('dashboardStatus', `Lead #${leadId} updated.`);
-  await loadAnalyticsSummary();
+  await loadLeads();
 }
 
-async function loadAnalyticsSummary() {
-  const params = new URLSearchParams({ date: selectedAnalyticsDate });
-  const { response, data } = await apiFetch(`/admin/analytics/summary?${params.toString()}`, { method: 'GET' });
-  if (!response.ok) {
-    setStatus('dashboardStatus', data.error || 'Unable to load analytics.', true);
-    return;
-  }
+function renderLeadSummary(summary) {
+  document.getElementById('metricTotalLeads').textContent = Number(summary.totalLeads || 0);
+  document.getElementById('metricLeadsToday').textContent = Number(summary.leadsToday || 0);
+  document.getElementById('metricEnrolledLeads').textContent = Number(summary.enrolledLeads || 0);
+}
 
-  const daily = data.daily || data.today || {};
-  document.getElementById('metricPageViews').textContent = Number(daily.page_views || 0);
-  document.getElementById('metricCtaClicks').textContent = Number(daily.cta_clicks || 0);
-  document.getElementById('metricSubmitSuccess').textContent = Number(daily.form_submit_success || 0);
-
-  const historySelect = document.getElementById('analyticsHistorySelect');
-  if (historySelect) {
-    const historyRows = Array.isArray(data.dailyHistory) ? data.dailyHistory : [];
-    const options = ['<option value="">Recent active days</option>'].concat(historyRows.map((row) => {
-      const day = escapeHtml(row.metric_date || '');
-      const views = Number(row.page_views || 0);
-      const success = Number(row.form_submit_success || 0);
-      const selected = row.metric_date === selectedAnalyticsDate ? 'selected' : '';
-      return `<option value="${day}" ${selected}>${day} | Views: ${views} | Success: ${success}</option>`;
-    }));
-    historySelect.innerHTML = options.join('');
-  }
-
+function renderStatusBreakdown(rows) {
   const statusList = document.getElementById('statusBreakdownList');
-  const statusRows = Array.isArray(data.leadStatus) ? data.leadStatus : [];
-  statusList.innerHTML = statusRows.length === 0
-    ? '<li>No lead status data yet.</li>'
-    : statusRows.map((row) => `<li>${escapeHtml(row.status)}: ${Number(row.count || 0)}</li>`).join('');
+  if (!statusList) return;
 
-  setStatus('dashboardStatus', `Usage loaded for ${selectedAnalyticsDate}.`);
+  statusList.innerHTML = rows.length === 0
+    ? '<li>No matching lead status data.</li>'
+    : rows.map((row) => `<li>${escapeHtml(row.status)}: ${Number(row.count || 0)}</li>`).join('');
+}
+
+function updateSortButtons() {
+  document.querySelectorAll('.sort-btn').forEach((button) => {
+    const sortKey = String(button.dataset.sort || '');
+    const isActive = sortKey === currentSortBy;
+    const indicator = isActive ? (currentSortDir === 'asc' ? ' \u2191' : ' \u2193') : '';
+    button.textContent = button.textContent.replace(/\s[\u2191\u2193]$/, '') + indicator;
+    button.classList.toggle('is-active', isActive);
+    if (isActive) {
+      button.setAttribute('aria-sort', currentSortDir === 'asc' ? 'ascending' : 'descending');
+    } else {
+      button.removeAttribute('aria-sort');
+    }
+  });
 }
 
 async function viewLeadDetail(leadId) {
