@@ -221,6 +221,11 @@ async function handleAnalyticsEvents(request, env) {
       ? event.metadata
       : {};
 
+    // event_date = browser-local calendar date; fixes UTC timezone mismatch
+    const eventDate = isValidMetricDate(safeString(metadata.localDate))
+      ? safeString(metadata.localDate)
+      : metricDate;
+
     await db.prepare(`
       INSERT INTO analytics_events (
         session_id,
@@ -229,8 +234,9 @@ async function handleAnalyticsEvents(request, env) {
         source_page,
         metadata_json,
         ip_address,
-        user_agent
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        user_agent,
+        event_date
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       sessionId,
       eventName,
@@ -238,7 +244,8 @@ async function handleAnalyticsEvents(request, env) {
       sourcePage,
       JSON.stringify(metadata),
       ipAddress,
-      userAgent
+      userAgent,
+      eventDate
     ).run();
     inserted += 1;
 
@@ -500,51 +507,30 @@ async function handleAnalyticsSummary(request, env) {
     ? rawDate
     : new Date().toISOString().slice(0, 10);
 
-  const dailyMetricsRow = await db.prepare(`
-    SELECT *
-    FROM daily_metrics
-    WHERE metric_date = ?
-    LIMIT 1
+  // Single source of truth: query analytics_events directly.
+  // COALESCE(event_date, date(created_at)) handles rows written before
+  // migration 004 that have no event_date column value.
+  const dailyFromEvents = await db.prepare(`
+    SELECT
+      SUM(CASE WHEN event_name = 'page_view'           THEN 1 ELSE 0 END) AS page_views,
+      SUM(CASE WHEN event_name = 'cta_click'           THEN 1 ELSE 0 END) AS cta_clicks,
+      SUM(CASE WHEN event_name = 'form_open'           THEN 1 ELSE 0 END) AS form_opens,
+      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
+      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
+      SUM(CASE WHEN event_name = 'form_submit_fail'    THEN 1 ELSE 0 END) AS form_submit_fail
+    FROM analytics_events
+    WHERE COALESCE(event_date, date(created_at)) = ?
   `).bind(selectedDate).first();
 
-  const dailyFallbackFromEvents = await db.prepare(`
-    SELECT
-      ? AS metric_date,
-      SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END) AS page_views,
-      SUM(CASE WHEN event_name = 'cta_click' THEN 1 ELSE 0 END) AS cta_clicks,
-      SUM(CASE WHEN event_name = 'form_open' THEN 1 ELSE 0 END) AS form_opens,
-      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
-      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
-      SUM(CASE WHEN event_name = 'form_submit_fail' THEN 1 ELSE 0 END) AS form_submit_fail
-    FROM analytics_events
-    WHERE date(created_at) = ?
-  `).bind(selectedDate, selectedDate).first();
-
-  const daily = mergeDailyMetrics(selectedDate, dailyMetricsRow, dailyFallbackFromEvents);
-
-  const rolling24h = await db.prepare(`
-    SELECT
-      SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END) AS page_views,
-      SUM(CASE WHEN event_name = 'cta_click' THEN 1 ELSE 0 END) AS cta_clicks,
-      SUM(CASE WHEN event_name = 'form_open' THEN 1 ELSE 0 END) AS form_opens,
-      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
-      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
-      SUM(CASE WHEN event_name = 'form_submit_fail' THEN 1 ELSE 0 END) AS form_submit_fail
-    FROM analytics_events
-    WHERE created_at >= datetime('now', '-24 hours')
-  `).first();
-
-  const rolling7d = await db.prepare(`
-    SELECT
-      SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END) AS page_views,
-      SUM(CASE WHEN event_name = 'cta_click' THEN 1 ELSE 0 END) AS cta_clicks,
-      SUM(CASE WHEN event_name = 'form_open' THEN 1 ELSE 0 END) AS form_opens,
-      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
-      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
-      SUM(CASE WHEN event_name = 'form_submit_fail' THEN 1 ELSE 0 END) AS form_submit_fail
-    FROM analytics_events
-    WHERE created_at >= datetime('now', '-7 days')
-  `).first();
+  const daily = {
+    metric_date:           selectedDate,
+    page_views:            Number(dailyFromEvents?.page_views            || 0),
+    cta_clicks:            Number(dailyFromEvents?.cta_clicks            || 0),
+    form_opens:            Number(dailyFromEvents?.form_opens            || 0),
+    form_submit_attempts:  Number(dailyFromEvents?.form_submit_attempts  || 0),
+    form_submit_success:   Number(dailyFromEvents?.form_submit_success   || 0),
+    form_submit_fail:      Number(dailyFromEvents?.form_submit_fail      || 0)
+  };
 
   const statusRows = await db.prepare(`
     SELECT status, COUNT(*) AS count
@@ -555,15 +541,15 @@ async function handleAnalyticsSummary(request, env) {
 
   const dailyHistoryRows = await db.prepare(`
     SELECT
-      date(created_at) AS metric_date,
-      SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END) AS page_views,
-      SUM(CASE WHEN event_name = 'cta_click' THEN 1 ELSE 0 END) AS cta_clicks,
-      SUM(CASE WHEN event_name = 'form_open' THEN 1 ELSE 0 END) AS form_opens,
-      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END) AS form_submit_attempts,
-      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success,
-      SUM(CASE WHEN event_name = 'form_submit_fail' THEN 1 ELSE 0 END) AS form_submit_fail
+      COALESCE(event_date, date(created_at))                                 AS metric_date,
+      SUM(CASE WHEN event_name = 'page_view'           THEN 1 ELSE 0 END)   AS page_views,
+      SUM(CASE WHEN event_name = 'cta_click'           THEN 1 ELSE 0 END)   AS cta_clicks,
+      SUM(CASE WHEN event_name = 'form_open'           THEN 1 ELSE 0 END)   AS form_opens,
+      SUM(CASE WHEN event_name = 'form_submit_attempt' THEN 1 ELSE 0 END)   AS form_submit_attempts,
+      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END)   AS form_submit_success,
+      SUM(CASE WHEN event_name = 'form_submit_fail'    THEN 1 ELSE 0 END)   AS form_submit_fail
     FROM analytics_events
-    GROUP BY date(created_at)
+    GROUP BY COALESCE(event_date, date(created_at))
     ORDER BY metric_date DESC
     LIMIT 30
   `).all();
@@ -572,22 +558,6 @@ async function handleAnalyticsSummary(request, env) {
     selectedDate,
     daily,
     today: daily,
-    rolling24h: {
-      page_views: Number(rolling24h?.page_views || 0),
-      cta_clicks: Number(rolling24h?.cta_clicks || 0),
-      form_opens: Number(rolling24h?.form_opens || 0),
-      form_submit_attempts: Number(rolling24h?.form_submit_attempts || 0),
-      form_submit_success: Number(rolling24h?.form_submit_success || 0),
-      form_submit_fail: Number(rolling24h?.form_submit_fail || 0)
-    },
-    rolling7d: {
-      page_views: Number(rolling7d?.page_views || 0),
-      cta_clicks: Number(rolling7d?.cta_clicks || 0),
-      form_opens: Number(rolling7d?.form_opens || 0),
-      form_submit_attempts: Number(rolling7d?.form_submit_attempts || 0),
-      form_submit_success: Number(rolling7d?.form_submit_success || 0),
-      form_submit_fail: Number(rolling7d?.form_submit_fail || 0)
-    },
     dailyHistory: normalizeDailyRows(dailyHistoryRows.results || []),
     leadStatus: statusRows.results || []
   }, 200, env);
@@ -600,31 +570,27 @@ async function handleAnalyticsDebug(request, env) {
   const db = requireDb(env);
 
   const recentEvents = await db.prepare(`
-    SELECT id, event_name, event_category, source_page, created_at
+    SELECT id, event_name, event_category, source_page, event_date, created_at
     FROM analytics_events
     ORDER BY created_at DESC
     LIMIT 20
   `).all();
 
-  const recentDailyMetrics = await db.prepare(`
-    SELECT *
-    FROM daily_metrics
-    ORDER BY metric_date DESC
-    LIMIT 14
-  `).all();
-
-  const eventDates = await db.prepare(`
-    SELECT date(created_at) AS metric_date, COUNT(*) AS events
+  const eventDateSummary = await db.prepare(`
+    SELECT
+      COALESCE(event_date, date(created_at)) AS event_date,
+      COUNT(*) AS total_events,
+      SUM(CASE WHEN event_name = 'page_view'           THEN 1 ELSE 0 END) AS page_views,
+      SUM(CASE WHEN event_name = 'form_submit_success' THEN 1 ELSE 0 END) AS form_submit_success
     FROM analytics_events
-    GROUP BY date(created_at)
-    ORDER BY metric_date DESC
+    GROUP BY COALESCE(event_date, date(created_at))
+    ORDER BY event_date DESC
     LIMIT 14
   `).all();
 
   return jsonResponse({
     recentEvents: recentEvents.results || [],
-    recentDailyMetrics: recentDailyMetrics.results || [],
-    eventDates: eventDates.results || []
+    eventDateSummary: eventDateSummary.results || []
   }, 200, env);
 }
 
@@ -732,19 +698,6 @@ function resolveMetricDate(events) {
   }
 
   return new Date().toISOString().slice(0, 10);
-}
-
-function mergeDailyMetrics(selectedDate, dailyMetricsRow, fallbackRow) {
-  const primary = dailyMetricsRow || fallbackRow || {};
-  return {
-    metric_date: selectedDate,
-    page_views: Number(primary.page_views || 0),
-    cta_clicks: Number(primary.cta_clicks || 0),
-    form_opens: Number(primary.form_opens || 0),
-    form_submit_attempts: Number(primary.form_submit_attempts || 0),
-    form_submit_success: Number(primary.form_submit_success || 0),
-    form_submit_fail: Number(primary.form_submit_fail || 0)
-  };
 }
 
 function normalizeDailyRows(rows) {

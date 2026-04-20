@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS analytics_events (
 	metadata_json TEXT,
 	ip_address TEXT,
 	user_agent TEXT,
+	event_date TEXT,
 	created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
