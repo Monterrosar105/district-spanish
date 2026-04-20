@@ -39,25 +39,6 @@ body {
   box-shadow: 0 14px 35px rgba(30, 98, 148, 0.15);
 }
 
-.auth-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.auth-brand h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--deep);
-}
-
-.auth-brand p {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
 .auth-form {
   display: grid;
   gap: 10px;
@@ -114,31 +95,68 @@ textarea {
   color: var(--muted);
 }
 
-.admin-header {
+.admin-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  padding: 14px 0;
+}
+
+.admin-navbar-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, var(--deep) 0%, #1e6294 100%);
-  color: #fff;
-  box-shadow: 0 10px 24px rgba(15, 57, 88, 0.28);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  gap: 14px;
 }
 
-.header-brand {
+.navbar-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--text);
 }
 
-.admin-logo {
-  width: 46px;
-  height: 46px;
-  object-fit: contain;
-  border-radius: 50%;
-  background: #fff;
-  padding: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
+.logo-img {
+  height: 40px;
+  width: auto;
+}
+
+.admin-navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-nav-link {
+  color: var(--text);
+  font-weight: 600;
+  position: relative;
+  text-decoration: none;
+}
+
+.admin-nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.admin-nav-link:hover {
+  color: var(--primary);
+}
+
+.admin-nav-link:hover::after {
+  width: 100%;
 }
 
 .admin-main {
@@ -369,10 +387,19 @@ td {
     width: 100%;
   }
 
-  .admin-header {
+  .admin-navbar {
+    padding: 10px 0;
+  }
+
+  .admin-navbar-container {
     flex-direction: column;
     align-items: flex-start;
-    padding: 16px;
+    gap: 10px;
+  }
+
+  .admin-navbar-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .admin-main {
