@@ -386,13 +386,7 @@ function renderLeadDetailHtml(lead) {
     ]),
     renderDetailSection('Submission Metadata', [
       ['Date Submitted', formatDate(lead.created_at)],
-      ['Status', safeText(lead.status) || '-'],
-      ['Assigned To', safeText(lead.assigned_to) || '-'],
-      ['Last Contacted', formatDate(lead.last_contacted_at)],
-      ['UTM Source', safeText(lead.utm_source) || '-'],
-      ['UTM Medium', safeText(lead.utm_medium) || '-'],
-      ['UTM Campaign', safeText(lead.utm_campaign) || '-'],
-      ['IP Address', safeText(lead.ip_address) || '-']
+      ['Status', safeText(lead.status) || '-']
     ])
   ].join('');
 }
