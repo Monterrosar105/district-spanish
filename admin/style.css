@@ -238,7 +238,22 @@ textarea {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1080px;
+  min-width: 560px;
+}
+
+.name-link {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.name-link:hover {
+  text-decoration: underline;
 }
 
 thead th {

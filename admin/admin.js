@@ -219,7 +219,7 @@ function renderLeadsTable(leads) {
   const tbody = document.getElementById('leadsTableBody');
 
   if (leads.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9">No leads found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3">No leads found.</td></tr>';
     return;
   }
 
@@ -227,29 +227,23 @@ function renderLeadsTable(leads) {
     const name = `${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}`.trim();
     return `
       <tr>
-        <td data-label="Name">${name}</td>
-        <td data-label="Email">${escapeHtml(lead.email || '')}</td>
-        <td data-label="Phone">${escapeHtml(lead.phone || '')}</td>
-        <td data-label="Level">${escapeHtml(lead.spanish_level || '')}</td>
+        <td data-label="Name">
+          <button class="name-link" data-role="view" data-id="${lead.id}">${name || 'Unnamed lead'}</button>
+        </td>
         <td data-label="Date Submitted">${formatDate(lead.created_at)}</td>
         <td data-label="Status">
           <select data-role="status" data-id="${lead.id}">
             ${statusOptionsMarkup(lead.status)}
           </select>
         </td>
-        <td data-label="Admin Notes"><textarea data-role="notes" data-id="${lead.id}" rows="2"></textarea></td>
-        <td data-label="Actions">
-          <div class="actions">
-            <button class="btn-secondary" data-role="view" data-id="${lead.id}">View</button>
-            <button class="btn-secondary" data-role="save" data-id="${lead.id}">Save</button>
-          </div>
-        </td>
       </tr>
     `;
   }).join('');
 
-  tbody.querySelectorAll('button[data-role="save"]').forEach((button) => {
-    button.addEventListener('click', () => updateLeadRow(Number(button.dataset.id)));
+  tbody.querySelectorAll('select[data-role="status"]').forEach((selectNode) => {
+    selectNode.addEventListener('change', async () => {
+      await updateLeadStatus(Number(selectNode.dataset.id), selectNode.value);
+    });
   });
 
   tbody.querySelectorAll('button[data-role="view"]').forEach((button) => {
@@ -265,13 +259,9 @@ function statusOptionsMarkup(currentValue) {
   }).join('');
 }
 
-async function updateLeadRow(leadId) {
-  const statusInput = document.querySelector(`select[data-role="status"][data-id="${leadId}"]`);
-  const notesInput = document.querySelector(`textarea[data-role="notes"][data-id="${leadId}"]`);
-
+async function updateLeadStatus(leadId, statusValue) {
   const payload = {
-    status: statusInput.value,
-    adminNotes: notesInput.value.trim(),
+    status: statusValue,
     lastContactedAt: new Date().toISOString()
   };
 
@@ -285,7 +275,7 @@ async function updateLeadRow(leadId) {
     return;
   }
 
-  setStatus('dashboardStatus', `Lead #${leadId} updated.`);
+  setStatus('dashboardStatus', `Status updated for lead #${leadId}.`);
   await loadLeads();
 }
 
