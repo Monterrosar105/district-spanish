@@ -39,13 +39,21 @@ async function apiFetch(path, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers
-  });
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers
+    });
 
-  const data = await response.json().catch(() => ({}));
-  return { response, data };
+    const data = await response.json().catch(() => ({}));
+    return { response, data };
+  } catch (err) {
+    // Network error (CORS, worker unreachable, etc.)
+    return {
+      response: { ok: false, status: 0 },
+      data: { error: `Network error: ${err.message || 'Could not reach the server.'}` }
+    };
+  }
 }
 
 function initLoginPage() {
