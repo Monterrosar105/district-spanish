@@ -12,6 +12,7 @@ const navLinks = document.querySelectorAll('.nav-link');
 
 const WORKER_BASE_URL = 'https://district-spanish-form.robmonterrosa105.workers.dev';
 const FORM_ENDPOINT = `${WORKER_BASE_URL}/form`;
+const REVIEWS_ENDPOINT = `${WORKER_BASE_URL}/reviews`;
 
 function getSessionId() {
   const key = 'districtSpanishSessionId';
@@ -114,6 +115,11 @@ const navOpenFormModal = document.getElementById('navOpenFormModal');
 const heroOpenFormModal = document.getElementById('heroOpenFormModal');
 const closeFormModal = document.getElementById('closeFormModal');
 const modalOverlay = document.getElementById('modalOverlay');
+const reviewModal = document.getElementById('reviewModal');
+const openReviewModal = document.getElementById('openReviewModal');
+const openReviewModalContact = document.getElementById('openReviewModalContact');
+const closeReviewModal = document.getElementById('closeReviewModal');
+const reviewModalOverlay = document.getElementById('reviewModalOverlay');
 
 // Open modal function
 function openModal() {
@@ -158,6 +164,18 @@ function closeModal() {
   document.body.style.overflow = 'auto';
 }
 
+function openReviewFormModal() {
+  if (!reviewModal) return;
+  reviewModal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReviewFormModal() {
+  if (!reviewModal) return;
+  reviewModal.classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
 if (closeFormModal) {
   closeFormModal.addEventListener('click', closeModal);
 }
@@ -167,10 +185,30 @@ if (modalOverlay) {
   modalOverlay.addEventListener('click', closeModal);
 }
 
+if (openReviewModal) {
+  openReviewModal.addEventListener('click', openReviewFormModal);
+}
+
+if (openReviewModalContact) {
+  openReviewModalContact.addEventListener('click', openReviewFormModal);
+}
+
+if (closeReviewModal) {
+  closeReviewModal.addEventListener('click', closeReviewFormModal);
+}
+
+if (reviewModalOverlay) {
+  reviewModalOverlay.addEventListener('click', closeReviewFormModal);
+}
+
 // Close modal with Escape key
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && formModal.classList.contains('active')) {
     closeModal();
+  }
+
+  if (e.key === 'Escape' && reviewModal && reviewModal.classList.contains('active')) {
+    closeReviewFormModal();
   }
 });
 
@@ -180,6 +218,8 @@ document.addEventListener('keydown', (e) => {
 
 const contactForm = document.getElementById('contact-form');
 const formStatus = document.getElementById('form-status');
+const reviewForm = document.getElementById('review-form');
+const reviewStatus = document.getElementById('review-status');
 
 // Show/hide "Other" field for schedule
 const scheduleOtherCheck = document.getElementById('scheduleOtherCheck');
@@ -321,6 +361,159 @@ function showFormStatus(message, type) {
   formStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+function showReviewStatus(message, type) {
+  if (!reviewStatus) return;
+  reviewStatus.textContent = message;
+  reviewStatus.className = `form-status form-status--${type}`;
+  reviewStatus.style.display = 'block';
+  reviewStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+if (reviewForm) {
+  reviewForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    reviewStatus.textContent = '';
+    reviewStatus.className = 'form-status';
+
+    const firstName = document.getElementById('reviewFirstName').value.trim();
+    const lastInitial = document.getElementById('reviewLastInitial').value.trim().charAt(0).toUpperCase();
+    const location = document.getElementById('reviewLocation').value.trim();
+    const email = document.getElementById('reviewEmail').value.trim();
+    const reviewText = document.getElementById('reviewText').value.trim();
+    const reviewSpanish = document.getElementById('reviewSpanish').value.trim();
+    const company = document.getElementById('reviewCompany').value.trim();
+    const consent = document.getElementById('reviewConsent').checked;
+
+    if (!firstName || !lastInitial || !location || !reviewText || !consent) {
+      showReviewStatus('Please fill in all required fields.', 'error');
+      return;
+    }
+
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showReviewStatus('Please enter a valid email address.', 'error');
+        return;
+      }
+    }
+
+    const utm = getUtmParams();
+    const payload = {
+      firstName,
+      lastInitial,
+      location,
+      email,
+      reviewText,
+      reviewSpanish,
+      consent,
+      company,
+      utmSource: utm.utmSource,
+      utmMedium: utm.utmMedium,
+      utmCampaign: utm.utmCampaign,
+      sessionId: getSessionId()
+    };
+
+    const submitButton = reviewForm.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Submitting...';
+
+    try {
+      const response = await fetch(REVIEWS_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showReviewStatus('Thank you! Your review was submitted for approval.', 'success');
+        reviewForm.reset();
+
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+
+        setTimeout(() => {
+          reviewStatus.textContent = '';
+          closeReviewFormModal();
+        }, 2500);
+      } else {
+        showReviewStatus(result.error || 'Unable to submit your review right now.', 'error');
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+      }
+    } catch (error) {
+      console.error('Review submission error:', error);
+      showReviewStatus('Network error. Please try again.', 'error');
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
+  });
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderReviewCard(review) {
+  const firstName = escapeHtml(review.first_name || 'Student');
+  const lastInitial = escapeHtml(review.last_initial || '');
+  const location = escapeHtml(review.location || '');
+  const reviewText = escapeHtml(review.review_text || '');
+  const reviewSpanish = escapeHtml(review.review_spanish || '');
+
+  return `
+    <div class="testimonial-card">
+      <div class="testimonial-text">
+        <p>"${reviewText}"</p>
+        ${reviewSpanish ? `<p class="testimonial-spanish">${reviewSpanish}</p>` : ''}
+      </div>
+      <div class="testimonial-author">
+        <p><strong>${firstName} ${lastInitial ? `${lastInitial}.` : ''}</strong>${location ? ` • ${location}` : ''}</p>
+      </div>
+    </div>
+  `;
+}
+
+async function loadApprovedReviews() {
+  const section = document.getElementById('testimonialsSection');
+  const grid = document.getElementById('testimonialsGrid');
+  if (!section || !grid) return;
+
+  try {
+    const response = await fetch(`${REVIEWS_ENDPOINT}?limit=12`, { method: 'GET' });
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+    const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+
+    if (reviews.length === 0) {
+      section.classList.add('testimonials-hidden');
+      return;
+    }
+
+    grid.innerHTML = reviews.map(renderReviewCard).join('');
+    section.classList.remove('testimonials-hidden');
+
+    grid.querySelectorAll('.testimonial-card').forEach((element) => {
+      observer.observe(element);
+    });
+  } catch (error) {
+    console.error('Unable to load approved reviews:', error);
+  }
+}
+
 
 // ============================================
 // SCROLL ANIMATIONS (Fade-in on scroll)
@@ -344,6 +537,8 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.program-card, .step-card, .teacher-card, .testimonial-card, .culture-card, .pricing-card').forEach(element => {
     observer.observe(element);
 });
+
+loadApprovedReviews();
 
 // ============================================
 // NAVBAR SCROLL EFFECT
@@ -463,7 +658,7 @@ if (window.performance) {
 // EXTERNAL LINK TRACKING
 // ============================================
 
-document.querySelectorAll('a[href^="http"], a[href^="https"], a[href^="mailto"], a[href^="https://wa.me"]').forEach(link => {
+document.querySelectorAll('a[href^="http"], a[href^="https"], a[href^="mailto"]').forEach(link => {
     // Add target="_blank" for external links
     if (link.hostname !== window.location.hostname && !link.getAttribute('target')) {
         link.setAttribute('target', '_blank');

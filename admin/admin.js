@@ -79,7 +79,7 @@ async function initDashboardPage() {
   if (!isAuthed) return;
 
   wireDashboardEvents();
-  await loadLeads();
+  await Promise.all([loadLeads(), loadReviews()]);
 }
 
 async function ensureAuthenticated() {
@@ -107,6 +107,11 @@ let currentSortBy = 'created_at';
 let currentSortDir = 'desc';
 let currentTotal = 0;
 const pageSize = 20;
+let reviewCurrentPage = 1;
+let reviewCurrentQuery = '';
+let reviewCurrentStatus = '';
+let reviewCurrentTotal = 0;
+const reviewPageSize = 15;
 
 function wireDashboardEvents() {
   document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -186,6 +191,41 @@ function wireDashboardEvents() {
       closeLeadDetailModal();
     }
   });
+
+  document.getElementById('reviewRefreshBtn').addEventListener('click', async () => {
+    await loadReviews();
+  });
+
+  document.getElementById('reviewSearchInput').addEventListener('input', async (event) => {
+    reviewCurrentQuery = event.target.value.trim();
+    reviewCurrentPage = 1;
+    await loadReviews();
+  });
+
+  document.getElementById('reviewStatusFilter').addEventListener('change', async (event) => {
+    reviewCurrentStatus = event.target.value;
+    reviewCurrentPage = 1;
+    await loadReviews();
+  });
+
+  document.getElementById('reviewPrevPageBtn').addEventListener('click', async () => {
+    if (reviewCurrentPage > 1) {
+      reviewCurrentPage -= 1;
+      await loadReviews();
+    }
+  });
+
+  document.getElementById('reviewNextPageBtn').addEventListener('click', async () => {
+    const maxPage = Math.max(1, Math.ceil(reviewCurrentTotal / reviewPageSize));
+    if (reviewCurrentPage < maxPage) {
+      reviewCurrentPage += 1;
+      await loadReviews();
+    }
+  });
+
+  document.getElementById('importReviewBtn').addEventListener('click', async () => {
+    await importReviewFromAdmin();
+  });
 }
 
 async function loadLeads() {
@@ -213,6 +253,29 @@ async function loadLeads() {
   renderStatusBreakdown(Array.isArray(data.statusBreakdown) ? data.statusBreakdown : []);
   document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${Math.max(1, Math.ceil(currentTotal / pageSize))}`;
   setStatus('dashboardStatus', `Loaded ${data.leads.length} lead(s).`);
+}
+
+async function loadReviews() {
+  setStatus('reviewStatusMessage', 'Loading reviews...');
+
+  const params = new URLSearchParams({
+    page: String(reviewCurrentPage),
+    limit: String(reviewPageSize)
+  });
+
+  if (reviewCurrentQuery) params.set('q', reviewCurrentQuery);
+  if (reviewCurrentStatus) params.set('status', reviewCurrentStatus);
+
+  const { response, data } = await apiFetch(`/admin/reviews?${params.toString()}`);
+  if (!response.ok) {
+    setStatus('reviewStatusMessage', data.error || 'Unable to load reviews.', true);
+    return;
+  }
+
+  reviewCurrentTotal = Number(data.pagination?.total || 0);
+  renderReviewsTable(Array.isArray(data.reviews) ? data.reviews : []);
+  document.getElementById('reviewPageInfo').textContent = `Page ${reviewCurrentPage} of ${Math.max(1, Math.ceil(reviewCurrentTotal / reviewPageSize))}`;
+  setStatus('reviewStatusMessage', `Loaded ${data.reviews.length} review(s).`);
 }
 
 function renderLeadsTable(leads) {
@@ -251,8 +314,48 @@ function renderLeadsTable(leads) {
   });
 }
 
+function renderReviewsTable(reviews) {
+  const tbody = document.getElementById('reviewsTableBody');
+
+  if (reviews.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4">No reviews found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = reviews.map((review) => {
+    const name = `${escapeHtml(review.first_name || '')} ${escapeHtml(review.last_initial || '')}.`.trim();
+    const reviewText = escapeHtml(review.review_text || '');
+    return `
+      <tr>
+        <td data-label="Name">${name || 'Anonymous'}</td>
+        <td data-label="Location">${escapeHtml(review.location || '-')}</td>
+        <td data-label="Review">${reviewText}</td>
+        <td data-label="Status">
+          <select data-role="review-status" data-id="${review.id}">
+            ${reviewStatusOptionsMarkup(review.status)}
+          </select>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.querySelectorAll('select[data-role="review-status"]').forEach((selectNode) => {
+    selectNode.addEventListener('change', async () => {
+      await updateReviewStatus(Number(selectNode.dataset.id), selectNode.value);
+    });
+  });
+}
+
 function statusOptionsMarkup(currentValue) {
   const values = ['new', 'contacted', 'follow-up', 'trial-scheduled', 'enrolled', 'closed-lost'];
+  return values.map((value) => {
+    const selected = value === currentValue ? 'selected' : '';
+    return `<option value="${value}" ${selected}>${value}</option>`;
+  }).join('');
+}
+
+function reviewStatusOptionsMarkup(currentValue) {
+  const values = ['pending', 'approved', 'rejected'];
   return values.map((value) => {
     const selected = value === currentValue ? 'selected' : '';
     return `<option value="${value}" ${selected}>${value}</option>`;
@@ -277,6 +380,68 @@ async function updateLeadStatus(leadId, statusValue) {
 
   setStatus('dashboardStatus', `Status updated for lead #${leadId}.`);
   await loadLeads();
+}
+
+async function updateReviewStatus(reviewId, statusValue) {
+  const { response, data } = await apiFetch(`/admin/reviews/${reviewId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: statusValue })
+  });
+
+  if (!response.ok) {
+    setStatus('reviewStatusMessage', data.error || 'Unable to update review status.', true);
+    return;
+  }
+
+  setStatus('reviewStatusMessage', `Status updated for review #${reviewId}.`);
+  await loadReviews();
+}
+
+async function importReviewFromAdmin() {
+  const firstName = String(document.getElementById('importReviewFirstName').value || '').trim();
+  const lastInitial = String(document.getElementById('importReviewLastInitial').value || '').trim();
+  const location = String(document.getElementById('importReviewLocation').value || '').trim();
+  const email = String(document.getElementById('importReviewEmail').value || '').trim();
+  const reviewSpanish = String(document.getElementById('importReviewSpanish').value || '').trim();
+  const status = String(document.getElementById('importReviewStatus').value || '').trim();
+  const reviewText = String(document.getElementById('importReviewText').value || '').trim();
+
+  if (!firstName || !lastInitial || !location || !reviewText) {
+    setStatus('reviewStatusMessage', 'First name, last initial, location, and review text are required.', true);
+    return;
+  }
+
+  const payload = {
+    firstName,
+    lastInitial,
+    location,
+    email,
+    reviewSpanish,
+    status,
+    reviewText
+  };
+
+  const { response, data } = await apiFetch('/admin/reviews/import', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    setStatus('reviewStatusMessage', data.error || 'Unable to import review.', true);
+    return;
+  }
+
+  document.getElementById('importReviewFirstName').value = '';
+  document.getElementById('importReviewLastInitial').value = '';
+  document.getElementById('importReviewLocation').value = '';
+  document.getElementById('importReviewEmail').value = '';
+  document.getElementById('importReviewSpanish').value = '';
+  document.getElementById('importReviewText').value = '';
+  document.getElementById('importReviewStatus').value = 'approved';
+
+  setStatus('reviewStatusMessage', 'Review imported successfully.');
+  reviewCurrentPage = 1;
+  await loadReviews();
 }
 
 function renderLeadSummary(summary) {

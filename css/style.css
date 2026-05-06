@@ -901,6 +901,16 @@ a.btn-whatsapp-large:hover {
     background-color: var(--light-bg);
 }
 
+.testimonials-hidden {
+    display: none;
+}
+
+.testimonials-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
 .testimonials-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1848,6 +1858,14 @@ a.btn-whatsapp-large:hover {
     outline: none;
     border-color: var(--secondary-color);
     box-shadow: 0 0 0 3px rgba(30, 98, 148, 0.1);
+}
+
+.hp-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
 }
 
 /* ============================================

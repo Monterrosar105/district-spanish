@@ -89,6 +89,62 @@
 
       <p id="dashboardStatus" class="status"></p>
     </section>
+
+    <section class="panel">
+      <h2>Review Moderation</h2>
+      <div class="review-import-box">
+        <h3>Manual Review Import</h3>
+        <div class="review-import-grid">
+          <input id="importReviewFirstName" type="text" placeholder="First name">
+          <input id="importReviewLastInitial" type="text" maxlength="1" placeholder="Last initial">
+          <input id="importReviewLocation" type="text" placeholder="Location">
+          <input id="importReviewEmail" type="email" placeholder="Email (optional)">
+          <input id="importReviewSpanish" type="text" placeholder="Spanish line (optional)">
+          <select id="importReviewStatus">
+            <option value="approved">approved</option>
+            <option value="pending">pending</option>
+            <option value="rejected">rejected</option>
+          </select>
+        </div>
+        <textarea id="importReviewText" rows="4" placeholder="Review text"></textarea>
+        <div class="review-import-actions">
+          <button id="importReviewBtn" class="btn-primary">Import Review</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input id="reviewSearchInput" type="search" placeholder="Search by name, location, review text">
+        <select id="reviewStatusFilter">
+          <option value="">All statuses</option>
+          <option value="pending">pending</option>
+          <option value="approved">approved</option>
+          <option value="rejected">rejected</option>
+        </select>
+        <button id="reviewRefreshBtn" class="btn-secondary">Refresh</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Location</th>
+              <th>Review</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reviewsTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button id="reviewPrevPageBtn" class="btn-secondary">Previous</button>
+        <span id="reviewPageInfo">Page 1</span>
+        <button id="reviewNextPageBtn" class="btn-secondary">Next</button>
+      </div>
+
+      <p id="reviewStatusMessage" class="status"></p>
+    </section>
   </main>
 
   <div id="leadDetailModal" class="detail-modal" aria-hidden="true">

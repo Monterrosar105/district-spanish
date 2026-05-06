@@ -226,6 +226,30 @@ textarea {
   margin-bottom: 12px;
 }
 
+.review-import-box {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+  background: #f8fbff;
+}
+
+.review-import-box h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.review-import-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.review-import-actions {
+  margin-top: 10px;
+}
+
 .toolbar input,
 .toolbar select {
   background: #fff;
@@ -287,6 +311,12 @@ td {
   text-align: left;
   padding: 8px;
   vertical-align: top;
+}
+
+#reviewsTableBody td[data-label="Review"] {
+  max-width: 460px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .actions {
@@ -406,6 +436,10 @@ td {
   }
 
   .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .review-import-grid {
     grid-template-columns: 1fr;
   }
 

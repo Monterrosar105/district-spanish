@@ -11,6 +11,8 @@ const STATUS_VALUES = new Set([
   'closed-lost'
 ]);
 
+const REVIEW_STATUS_VALUES = new Set(['pending', 'approved', 'rejected']);
+
 const DAILY_EVENT_COLUMN_MAP = {
   page_view: 'page_views',
   cta_click: 'cta_clicks',
@@ -39,6 +41,14 @@ export default {
         return await handleFormSubmission(request, env);
       }
 
+      if (path === '/reviews' && request.method === 'POST') {
+        return await handleReviewSubmission(request, env);
+      }
+
+      if (path === '/reviews' && request.method === 'GET') {
+        return await handlePublicReviews(request, env);
+      }
+
       if (path === '/analytics/events' && request.method === 'POST') {
         return await handleAnalyticsEvents(request, env);
       }
@@ -59,6 +69,14 @@ export default {
         return await handleAdminLeads(request, env);
       }
 
+      if (path === '/admin/reviews' && request.method === 'GET') {
+        return await handleAdminReviews(request, env);
+      }
+
+      if (path === '/admin/reviews/import' && request.method === 'POST') {
+        return await handleAdminReviewImport(request, env);
+      }
+
       const leadPathMatch = path.match(/^\/admin\/leads\/(\d+)$/);
       if (leadPathMatch && request.method === 'PATCH') {
         return await handleAdminLeadUpdate(request, env, Number(leadPathMatch[1]));
@@ -66,6 +84,11 @@ export default {
 
       if (leadPathMatch && request.method === 'GET') {
         return await handleAdminLeadDetail(request, env, Number(leadPathMatch[1]));
+      }
+
+      const reviewPathMatch = path.match(/^\/admin\/reviews\/(\d+)$/);
+      if (reviewPathMatch && request.method === 'PATCH') {
+        return await handleAdminReviewUpdate(request, env, Number(reviewPathMatch[1]));
       }
 
       if (path === '/admin/analytics/summary' && request.method === 'GET') {
@@ -293,6 +316,138 @@ async function handleAnalyticsEvents(request, env) {
     rolledUp,
     skipped,
     metricDate
+  }, 200, env);
+}
+
+async function handleReviewSubmission(request, env) {
+  const db = requireDb(env);
+  const payload = await request.json();
+
+  const honeypot = safeString(payload.company);
+  if (honeypot) {
+    return jsonResponse({ success: true, message: 'Thanks for your feedback!' }, 200, env);
+  }
+
+  const firstName = safeString(payload.firstName);
+  const lastInitial = normalizeLastInitial(payload.lastInitial);
+  const location = safeString(payload.location);
+  const reviewText = safeString(payload.reviewText);
+  const reviewSpanish = safeString(payload.reviewSpanish);
+  const email = safeString(payload.email);
+
+  const requiredMissing = [];
+  if (!firstName) requiredMissing.push('firstName');
+  if (!lastInitial) requiredMissing.push('lastInitial');
+  if (!location) requiredMissing.push('location');
+  if (!reviewText) requiredMissing.push('reviewText');
+  if (payload.consent !== true) requiredMissing.push('consent');
+
+  if (requiredMissing.length > 0) {
+    return jsonResponse({ error: `Missing required fields: ${requiredMissing.join(', ')}` }, 400, env);
+  }
+
+  if (firstName.length > 80 || location.length > 120 || reviewText.length > 1500 || (reviewSpanish && reviewSpanish.length > 300)) {
+    return jsonResponse({ error: 'One or more fields exceed allowed length' }, 400, env);
+  }
+
+  if (email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return jsonResponse({ error: 'Invalid email format' }, 400, env);
+    }
+  }
+
+  const ipAddress = request.headers.get('CF-Connecting-IP') || null;
+  const userAgent = request.headers.get('User-Agent') || null;
+  const referrer = request.headers.get('Referer') || null;
+
+  if (ipAddress) {
+    const recentSubmission = await db.prepare(`
+      SELECT id
+      FROM reviews
+      WHERE ip_address = ?
+        AND created_at >= datetime('now', '-60 seconds')
+      LIMIT 1
+    `).bind(ipAddress).first();
+
+    if (recentSubmission) {
+      return jsonResponse({ error: 'Please wait a moment before submitting another review.' }, 429, env);
+    }
+  }
+
+  const externalId = `review_${crypto.randomUUID()}`;
+
+  const insertResult = await db.prepare(`
+    INSERT INTO reviews (
+      external_id,
+      first_name,
+      last_initial,
+      location,
+      review_text,
+      review_spanish,
+      email,
+      status,
+      ip_address,
+      user_agent,
+      referrer
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+  `).bind(
+    externalId,
+    firstName,
+    lastInitial,
+    location,
+    reviewText,
+    reviewSpanish,
+    email,
+    ipAddress,
+    userAgent,
+    referrer
+  ).run();
+
+  if (env.RESEND_API_KEY) {
+    const emailHtml = generateReviewEmailHtml({
+      firstName,
+      lastInitial,
+      location,
+      reviewText,
+      reviewSpanish,
+      email
+    });
+    await sendEmailWithResend(env.RESEND_API_KEY, emailHtml, email || 'no-reply@districtspanish.com', 'New Review Submission');
+  }
+
+  return jsonResponse({
+    success: true,
+    message: 'Thank you! Your review was submitted for approval.',
+    reviewId: insertResult.meta?.last_row_id,
+    externalId
+  }, 200, env);
+}
+
+async function handlePublicReviews(request, env) {
+  const db = requireDb(env);
+  const url = new URL(request.url);
+  const limit = Math.min(24, Math.max(1, Number(url.searchParams.get('limit') || 12)));
+
+  const reviewsResult = await db.prepare(`
+    SELECT
+      id,
+      external_id,
+      first_name,
+      last_initial,
+      location,
+      review_text,
+      review_spanish,
+      approved_at,
+      created_at
+    FROM reviews
+    WHERE status = 'approved'
+    ORDER BY COALESCE(approved_at, created_at) DESC
+    LIMIT ?
+  `).bind(limit).all();
+
+  return jsonResponse({
+    reviews: reviewsResult.results || []
   }, 200, env);
 }
 
@@ -564,6 +719,209 @@ async function handleAdminLeadDetail(request, env, leadId) {
   return jsonResponse({ lead: row }, 200, env);
 }
 
+async function handleAdminReviews(request, env) {
+  const session = await requireAdminSession(request, env);
+  if (!session.ok) return session.response;
+
+  const db = requireDb(env);
+  const url = new URL(request.url);
+  const status = safeString(url.searchParams.get('status'));
+  const query = safeString(url.searchParams.get('q'));
+  const page = Math.max(1, Number(url.searchParams.get('page') || 1));
+  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') || 25)));
+  const offset = (page - 1) * limit;
+
+  const where = [];
+  const params = [];
+
+  if (status) {
+    if (!REVIEW_STATUS_VALUES.has(status)) {
+      return jsonResponse({ error: 'Invalid review status value' }, 400, env);
+    }
+    where.push('status = ?');
+    params.push(status);
+  }
+
+  if (query) {
+    const like = `%${query}%`;
+    where.push('(first_name LIKE ? OR location LIKE ? OR review_text LIKE ?)');
+    params.push(like, like, like);
+  }
+
+  const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+
+  const reviewsResult = await db.prepare(`
+    SELECT
+      id,
+      external_id,
+      first_name,
+      last_initial,
+      location,
+      review_text,
+      review_spanish,
+      email,
+      status,
+      admin_notes,
+      approved_at,
+      approved_by,
+      created_at,
+      updated_at
+    FROM reviews
+    ${whereClause}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(...params, limit, offset).all();
+
+  const countResult = await db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM reviews
+    ${whereClause}
+  `).bind(...params).first();
+
+  return jsonResponse({
+    reviews: reviewsResult.results || [],
+    pagination: {
+      page,
+      limit,
+      total: Number(countResult?.count || 0)
+    }
+  }, 200, env);
+}
+
+async function handleAdminReviewUpdate(request, env, reviewId) {
+  const session = await requireAdminSession(request, env);
+  if (!session.ok) return session.response;
+
+  const db = requireDb(env);
+  const payload = await request.json();
+  const updates = [];
+  const params = [];
+
+  if (payload.status !== undefined) {
+    const status = safeString(payload.status);
+    if (!REVIEW_STATUS_VALUES.has(status)) {
+      return jsonResponse({ error: 'Invalid status value' }, 400, env);
+    }
+
+    updates.push('status = ?');
+    params.push(status);
+
+    if (status === 'approved') {
+      updates.push("approved_at = datetime('now')");
+      updates.push('approved_by = ?');
+      params.push(session.data.username);
+    } else {
+      updates.push('approved_at = NULL');
+      updates.push('approved_by = NULL');
+    }
+  }
+
+  if (payload.adminNotes !== undefined) {
+    updates.push('admin_notes = ?');
+    params.push(safeString(payload.adminNotes));
+  }
+
+  if (updates.length === 0) {
+    return jsonResponse({ error: 'No valid fields to update' }, 400, env);
+  }
+
+  updates.push("updated_at = datetime('now')");
+  updates.push('updated_by = ?');
+  params.push(session.data.username, reviewId);
+
+  const result = await db.prepare(`
+    UPDATE reviews
+    SET ${updates.join(', ')}
+    WHERE id = ?
+  `).bind(...params).run();
+
+  if ((result.meta?.changes || 0) === 0) {
+    return jsonResponse({ error: 'Review not found' }, 404, env);
+  }
+
+  return jsonResponse({ success: true }, 200, env);
+}
+
+async function handleAdminReviewImport(request, env) {
+  const session = await requireAdminSession(request, env);
+  if (!session.ok) return session.response;
+
+  const db = requireDb(env);
+  const payload = await request.json();
+
+  const firstName = safeString(payload.firstName);
+  const lastInitial = normalizeLastInitial(payload.lastInitial);
+  const location = safeString(payload.location);
+  const reviewText = safeString(payload.reviewText);
+  const reviewSpanish = safeString(payload.reviewSpanish);
+  const email = safeString(payload.email);
+  const status = safeString(payload.status) || 'approved';
+
+  const requiredMissing = [];
+  if (!firstName) requiredMissing.push('firstName');
+  if (!lastInitial) requiredMissing.push('lastInitial');
+  if (!location) requiredMissing.push('location');
+  if (!reviewText) requiredMissing.push('reviewText');
+
+  if (requiredMissing.length > 0) {
+    return jsonResponse({ error: `Missing required fields: ${requiredMissing.join(', ')}` }, 400, env);
+  }
+
+  if (!REVIEW_STATUS_VALUES.has(status)) {
+    return jsonResponse({ error: 'Invalid status value' }, 400, env);
+  }
+
+  if (firstName.length > 80 || location.length > 120 || reviewText.length > 1500 || (reviewSpanish && reviewSpanish.length > 300)) {
+    return jsonResponse({ error: 'One or more fields exceed allowed length' }, 400, env);
+  }
+
+  if (email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return jsonResponse({ error: 'Invalid email format' }, 400, env);
+    }
+  }
+
+  const externalId = `review_${crypto.randomUUID()}`;
+
+  const approvedAt = status === 'approved' ? new Date().toISOString() : null;
+  const approvedBy = status === 'approved' ? session.data.username : null;
+
+  const insertResult = await db.prepare(`
+    INSERT INTO reviews (
+      external_id,
+      first_name,
+      last_initial,
+      location,
+      review_text,
+      review_spanish,
+      email,
+      status,
+      approved_at,
+      approved_by,
+      updated_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    externalId,
+    firstName,
+    lastInitial,
+    location,
+    reviewText,
+    reviewSpanish,
+    email,
+    status,
+    approvedAt,
+    approvedBy,
+    session.data.username
+  ).run();
+
+  return jsonResponse({
+    success: true,
+    reviewId: insertResult.meta?.last_row_id,
+    externalId
+  }, 200, env);
+}
+
 async function handleAnalyticsSummary(request, env) {
   const session = await requireAdminSession(request, env);
   if (!session.ok) return session.response;
@@ -763,6 +1121,12 @@ async function requireAdminSession(request, env) {
 function safeString(value) {
   if (value === undefined || value === null) return null;
   return String(value).trim();
+}
+
+function normalizeLastInitial(value) {
+  const raw = safeString(value);
+  if (!raw) return null;
+  return raw.charAt(0).toUpperCase();
 }
 
 function isValidMetricDate(value) {
@@ -987,7 +1351,7 @@ function generateEmailHtml(formData) {
 /**
  * Send email using Resend API
  */
-async function sendEmailWithResend(apiKey, htmlContent, senderEmail) {
+async function sendEmailWithResend(apiKey, htmlContent, senderEmail, subjectPrefix = 'New Contact Form Submission') {
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -998,7 +1362,7 @@ async function sendEmailWithResend(apiKey, htmlContent, senderEmail) {
       body: JSON.stringify({
         from: 'noreply@districtspanish.com',
         to: 'team@districtspanish.com',
-        subject: `New Contact Form Submission from ${senderEmail}`,
+        subject: `${subjectPrefix} from ${senderEmail}`,
         html: htmlContent,
         reply_to: senderEmail
       })
@@ -1014,6 +1378,58 @@ async function sendEmailWithResend(apiKey, htmlContent, senderEmail) {
   } catch (error) {
     return { success: false, error: error.message };
   }
+}
+
+function generateReviewEmailHtml(reviewData) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #1e6294; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .header h2 { margin: 0; }
+        .section { margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 15px; }
+        .section:last-child { border-bottom: none; }
+        .label { font-weight: bold; color: #1e6294; margin-top: 10px; }
+        .value { margin-left: 10px; color: #666; white-space: pre-wrap; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2>New Review Submission</h2>
+        </div>
+
+        <div class="section">
+          <div class="label">Display Name:</div>
+          <div class="value">${escapeHtml(reviewData.firstName)} ${escapeHtml(reviewData.lastInitial)}.</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Location:</div>
+          <div class="value">${escapeHtml(reviewData.location)}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Review:</div>
+          <div class="value">${escapeHtml(reviewData.reviewText)}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Spanish line:</div>
+          <div class="value">${reviewData.reviewSpanish ? escapeHtml(reviewData.reviewSpanish) : 'Not provided'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Contact email:</div>
+          <div class="value">${reviewData.email ? escapeHtml(reviewData.email) : 'Not provided'}</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 }
 
 /**

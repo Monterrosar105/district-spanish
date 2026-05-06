@@ -319,12 +319,15 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section class="testimonials">
+    <section id="testimonialsSection" class="testimonials testimonials-hidden">
         <div class="container">
             <h2 class="section-title">Student Success Stories</h2>
             <p class="section-subtitle">See what our students are achieving</p>
+            <div class="testimonials-actions">
+                <button class="btn btn-outline" id="openReviewModal">Leave Your Review</button>
+            </div>
             
-            <div class="testimonials-grid">
+            <div class="testimonials-grid" id="testimonialsGrid">
                 <!-- Testimonial 1 -->
                 <div class="testimonial-card">
                     <div class="testimonial-text">
@@ -427,10 +430,11 @@
                     <div class="contact-item">
                         <div class="contact-buttons">
                             <button class="btn btn-cta-primary" id="openFormModal">Book FREE Level Assessment</button>
+                            <button class="btn btn-outline" id="openReviewModalContact">Leave Your Review</button>
                         </div>
                     </div>
                     
-                    <p class="contact-note">We hope to teach you Spanish soon!</p>
+                    <p class="contact-note">Looking forward to teaching you Spanish soon!</p>
                     
                     <div class="contact-social">
                         <a href="https://www.instagram.com/districtspanish/" target="_blank" rel="noopener noreferrer" class="social-link" title="Instagram">
@@ -810,6 +814,69 @@
 
                 <!-- Submit Button -->
                 <button type="submit" class="btn btn-primary btn-large">Book FREE Level Assessment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="reviewModal" class="modal">
+        <div class="modal-overlay" id="reviewModalOverlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="closeReviewModal">×</button>
+
+            <div class="modal-header">
+                <h2>Leave Your Review</h2>
+                <p>Share your experience and help future students.</p>
+            </div>
+
+            <form class="contact-form" id="review-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reviewFirstName">First Name *</label>
+                        <input type="text" id="reviewFirstName" name="reviewFirstName" placeholder="John" maxlength="80" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewLastInitial">Last Initial *</label>
+                        <input type="text" id="reviewLastInitial" name="reviewLastInitial" placeholder="D" maxlength="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reviewLocation">Location *</label>
+                        <input type="text" id="reviewLocation" name="reviewLocation" placeholder="Washington, DC" maxlength="120" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewEmail">Email (optional)</label>
+                        <input type="email" id="reviewEmail" name="reviewEmail" placeholder="john@example.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reviewText">Your Review *</label>
+                    <textarea id="reviewText" name="reviewText" placeholder="Tell us about your learning experience..." rows="4" maxlength="1500" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="reviewSpanish">Spanish line (optional)</label>
+                    <input type="text" id="reviewSpanish" name="reviewSpanish" placeholder="Ahora puedo hablar con confianza." maxlength="300">
+                </div>
+
+                <div class="form-group hp-field" aria-hidden="true">
+                    <label for="reviewCompany">Company</label>
+                    <input type="text" id="reviewCompany" name="company" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reviewConsent" name="reviewConsent" required>
+                        I agree that my review may be published on the website after admin approval. *
+                    </label>
+                </div>
+
+                <div id="review-status" class="form-status"></div>
+
+                <button type="submit" class="btn btn-primary btn-large">Submit Review</button>
             </form>
         </div>
     </div>
