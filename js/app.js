@@ -165,14 +165,16 @@ function closeModal() {
 }
 
 function openReviewFormModal() {
-  if (!reviewModal) return;
-  reviewModal.classList.add('active');
+  const modal = reviewModal || document.getElementById('reviewModal');
+  if (!modal) return;
+  modal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
 
 function closeReviewFormModal() {
-  if (!reviewModal) return;
-  reviewModal.classList.remove('active');
+  const modal = reviewModal || document.getElementById('reviewModal');
+  if (!modal) return;
+  modal.classList.remove('active');
   document.body.style.overflow = 'auto';
 }
 
@@ -185,13 +187,13 @@ if (modalOverlay) {
   modalOverlay.addEventListener('click', closeModal);
 }
 
-if (openReviewModal) {
-  openReviewModal.addEventListener('click', openReviewFormModal);
-}
-
-if (openReviewModalContact) {
-  openReviewModalContact.addEventListener('click', openReviewFormModal);
-}
+// Delegate review modal opening so triggers keep working even if buttons are re-rendered.
+document.addEventListener('click', (event) => {
+  const trigger = event.target.closest('#openReviewModal, #openReviewModalContact, [data-open-review-modal="true"]');
+  if (!trigger) return;
+  event.preventDefault();
+  openReviewFormModal();
+});
 
 if (closeReviewModal) {
   closeReviewModal.addEventListener('click', closeReviewFormModal);
@@ -207,7 +209,8 @@ document.addEventListener('keydown', (e) => {
     closeModal();
   }
 
-  if (e.key === 'Escape' && reviewModal && reviewModal.classList.contains('active')) {
+  const modal = reviewModal || document.getElementById('reviewModal');
+  if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
     closeReviewFormModal();
   }
 });
@@ -464,6 +467,9 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+let testimonialsData = [];
+let testimonialsPage = 0;
+
 function renderReviewCard(review) {
   const firstName = escapeHtml(review.first_name || 'Student');
   const lastInitial = escapeHtml(review.last_initial || '');
@@ -484,31 +490,67 @@ function renderReviewCard(review) {
   `;
 }
 
-async function loadApprovedReviews() {
+function getTestimonialsPerPage() {
+  if (window.innerWidth <= 768) return 1;
+  if (window.innerWidth <= 1100) return 2;
+  return 3;
+}
+
+function renderTestimonials() {
   const section = document.getElementById('testimonialsSection');
   const grid = document.getElementById('testimonialsGrid');
-  if (!section || !grid) return;
+  const controls = document.getElementById('testimonialsCarouselControls');
+  const prevBtn = document.getElementById('testimonialPrevBtn');
+  const nextBtn = document.getElementById('testimonialNextBtn');
+  const pageInfo = document.getElementById('testimonialsPageInfo');
 
+  if (!section || !grid || !controls || !prevBtn || !nextBtn || !pageInfo) return;
+
+  if (testimonialsData.length === 0) {
+    section.classList.add('testimonials-hidden');
+    controls.hidden = true;
+    grid.innerHTML = '';
+    return;
+  }
+
+  section.classList.remove('testimonials-hidden');
+
+  if (testimonialsData.length > 3) {
+    const perPage = getTestimonialsPerPage();
+    const totalPages = Math.ceil(testimonialsData.length / perPage);
+
+    testimonialsPage = Math.max(0, Math.min(testimonialsPage, totalPages - 1));
+
+    const start = testimonialsPage * perPage;
+    const end = start + perPage;
+    const visibleReviews = testimonialsData.slice(start, end);
+
+    grid.innerHTML = visibleReviews.map(renderReviewCard).join('');
+    controls.hidden = false;
+    pageInfo.textContent = `${testimonialsPage + 1} / ${totalPages}`;
+    prevBtn.disabled = testimonialsPage === 0;
+    nextBtn.disabled = testimonialsPage >= totalPages - 1;
+  } else {
+    grid.innerHTML = testimonialsData.map(renderReviewCard).join('');
+    controls.hidden = true;
+  }
+
+  grid.querySelectorAll('.testimonial-card').forEach((element) => {
+    observer.observe(element);
+  });
+}
+
+async function loadApprovedReviews() {
   try {
-    const response = await fetch(`${REVIEWS_ENDPOINT}?limit=12`, { method: 'GET' });
+    const response = await fetch(`${REVIEWS_ENDPOINT}?limit=24`, { method: 'GET' });
     if (!response.ok) {
       return;
     }
 
     const data = await response.json();
-    const reviews = Array.isArray(data.reviews) ? data.reviews : [];
-
-    if (reviews.length === 0) {
-      section.classList.add('testimonials-hidden');
-      return;
-    }
-
-    grid.innerHTML = reviews.map(renderReviewCard).join('');
-    section.classList.remove('testimonials-hidden');
-
-    grid.querySelectorAll('.testimonial-card').forEach((element) => {
-      observer.observe(element);
-    });
+    testimonialsData = Array.isArray(data.reviews) ? data.reviews : [];
+    testimonialsPage = 0;
+    renderTestimonials();
   } catch (error) {
     console.error('Unable to load approved reviews:', error);
   }
@@ -539,6 +581,29 @@ document.querySelectorAll('.program-card, .step-card, .teacher-card, .testimonia
 });
 
 loadApprovedReviews();
+
+const testimonialPrevBtn = document.getElementById('testimonialPrevBtn');
+const testimonialNextBtn = document.getElementById('testimonialNextBtn');
+
+if (testimonialPrevBtn) {
+  testimonialPrevBtn.addEventListener('click', () => {
+    testimonialsPage = Math.max(0, testimonialsPage - 1);
+    renderTestimonials();
+  });
+}
+
+if (testimonialNextBtn) {
+  testimonialNextBtn.addEventListener('click', () => {
+    testimonialsPage += 1;
+    renderTestimonials();
+  });
+}
+
+window.addEventListener('resize', () => {
+  if (testimonialsData.length > 3) {
+    renderTestimonials();
+  }
+});
 
 // ============================================
 // NAVBAR SCROLL EFFECT
