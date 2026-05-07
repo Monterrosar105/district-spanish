@@ -2,6 +2,7 @@
 
 # Dependencies
 node_modules/
+external/.wrangler/
 package-lock.json
 yarn.lock
 
